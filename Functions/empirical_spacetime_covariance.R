@@ -11,11 +11,11 @@ empirical_st_cov <- function( data1, data2 = NULL, cross, locations, max_time_la
   
   emp <- list()
   
-  if(!cross == FALSE){
+  if(!cross == TRUE){
     
     for(tau in 0:max_time_lag){
       
-      for(i in (tau+1):(nrow(data)-tau)){
+      for(i in (tau+1):(nrow(data1)-tau)){
         scov = scov + (data1[i,] - mean)%*%t(data1[i+tau,] - mean)
       }
       
@@ -71,16 +71,48 @@ empirical_st_cov <- function( data1, data2 = NULL, cross, locations, max_time_la
       ylag <- locations[loc,2]-locations[,2]
       emp_vals <- scor[,loc]
       
-      for(loc in 2:ncol(data)){
+      for(loc in 2:ncol(data1)){
         xlag <- c(xlag, locations[loc,1] - locations[,1])
         ylag <- c(ylag, locations[loc,2] - locations[,2])
         emp_vals <- c(emp_vals,scor[,loc])
       }
       emp_temp <- data.frame(xlag,ylag,emp_vals)
-      colnames(emp_temp) <- c('xlag', 'ylag', 'correlation')
+      colnames(emp_temp) <- c('xlag', 'ylag', 'cross-correlation')
       emp[[tau+1]] <- emp_temp
     }
   }
   
   return(emp)
+}
+
+empirical_covariance_dataframe <- function(data1_cov, data2_cov, cross_cov){
+  
+  empirical_var1 <- data1_cov[[1]]
+  empirical_var2 <- data2_cov[[1]]
+  empirical_var3 <- cross_cov[[1]]
+  
+  binned.1 <- empirical_var1 %>% group_by(xlag,ylag) %>% summarize(avg1=mean(correlation))
+  binned.2 <- empirical_var2 %>% group_by(xlag,ylag) %>% summarize(avg1=mean(correlation))
+  binned.3 <- empirical_var3 %>% group_by(xlag,ylag) %>% summarize(avg1=mean(correlation))
+  
+  binned_orig <- cbind(binned.1$xlag,binned.1$ylag,rep(0,nrow(binned.1)),binned.1$avg1,
+                       binned.2$avg1,binned.3$avg1)
+  
+  dist0 <- sqrt(binned_orig[,1]^2+binned_orig[,2]^2)/1000
+  
+  for (i in 2:6){
+    empirical_var1 <- data1_cov[[i]]
+    empirical_var2 <- data2_cov[[i]]
+    empirical_var3 <- cross_cov[[i]]
+    
+    binned.1 <- empirical_var1 %>% group_by(xlag,ylag) %>% summarize(avg1=mean(correlation))
+    binned.2 <- empirical_var2 %>% group_by(xlag,ylag) %>% summarize(avg1=mean(correlation))
+    binned.3 <- empirical_var3 %>% group_by(xlag,ylag) %>% summarize(avg1=mean(correlation))
+    
+    binned_orig <- rbind(binned_orig,cbind(binned.1$xlag,binned.1$ylag,rep(i-1,nrow(binned.1)),binned.1$avg1,
+                                           binned.2$avg1,binned.3$avg1))
+  }
+  colnames(binned_orig) <- c('xlag', 'ylag', 'timelag', 'var1_cor', 'var2_cor', 'cross_cor')
+  
+  return(binned_orig)
 }
