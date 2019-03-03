@@ -2,54 +2,50 @@
 
 #---------STATIONARY------------#
 
-matern_cov_mod1_UTM <-function(theta,wind,time){
+matern_cov <- function(theta, wind, max_time_lag, p = 2, locations){
   
   w <- wind
   
-  t=time
-  q=2
+  loc1 <- coords1 <- cbind(locations[,1] + kappa[1,1] - kappa[2,1], locations[,2] + kappa[1,2] - kappa[2,2])
   
-  loc1 <- coords <- cbind(grid_locations_UTM[pts,1]+kappa[1,1]-kappa[2,1],grid_locations_UTM[pts,2]+kappa[1,2]-kappa[2,2])
-  
-  if (t==1){
+  if (max_time_lag == 0){
     loc1 <- loc1
   } else {
-    for (tt in 1:(t-1)){
-      temploc <- matrix(,ncol=2,nrow=nrow(coords))
-      for(rr in 1:nrow(coords)){
-        temploc[rr,] <- c(coords[rr,1]-tt*w[1],coords[rr,2]-tt*w[2])
+    for (tt in 1:(max_time_lag - 1)){
+      temploc <- matrix(, ncol=2, nrow=nrow(coords1))
+      for(rr in 1:nrow(coords1)){
+        temploc[rr,] <- c(coords1[rr,1] - tt*w[1], coords1[rr,2] - tt*w[2])
       }
       loc1 <- rbind(loc1, temploc)
     }
   }
   
-  loc2 <- coords <- cbind(grid_locations_UTM[pts,1]-kappa[1,1]+kappa[2,1],grid_locations_UTM[pts,2]-kappa[1,2]+kappa[2,2])
+  loc2 <- coords2 <- cbind(locations[,1] - kappa[1,1] + kappa[2,1], locations[,2] - kappa[1,2] + kappa[2,2])
   
-  if (t==1){
+  if (max_time_lag == 0){
     loc2 <- loc2
   } else {
-    for (tt in 1:(t-1)){
-      temploc <- matrix(,ncol=2,nrow=nrow(coords))
-      for(rr in 1:nrow(coords)){
-        temploc[rr,] <- c(coords[rr,1]-tt*w[1],coords[rr,2]-tt*w[2])
+    for (tt in 1:(max_time_lag - 1)){
+      temploc <- matrix(, ncol=2, nrow=nrow(coords2))
+      for(rr in 1:nrow(coords2)){
+        temploc[rr,] <- c(coords2[rr,1] - tt*w[1], coords2[rr,2] - tt*w[2])
       }
       loc2 <- rbind(loc2, temploc)
     }
   }
-  loc <- rbind(loc1,loc2)
+  loc <- rbind(loc1, loc2)
+  
   dist0 <- spDists(loc, longlat=F)/1000
   
-  #image.plot(dist0)
-  
-  nu=theta[1:3]
-  beta=theta[4:6]
-  rho=theta[11]
-  var <- theta[9:10]
+  nu <- theta[1:2]
+  beta <- theta[3]
+  rho <- theta[4]
+  var <- theta[5:6]
   nug <- theta[7:8]
   
-  S=matrix(NA,  q*dim(dist0)[1], q*dim(dist0)[1])
+  S=matrix(NA,  p*dim(dist0)[1], p*dim(dist0)[1])
   
-  for(i in 1:q){
+  for(i in 1:p){
     for(j in 1:i){
       
       temp=(i-1)*dim(dist0)[1]+1:dim(dist0)[1]
@@ -57,29 +53,27 @@ matern_cov_mod1_UTM <-function(theta,wind,time){
       
       if(i==j){
         
-        temp2=ifelse(dist0!=0,var[i]*(dist0/beta[i])^nu[i] * besselK(dist0/beta[i],nu[i])/(2^(nu[i]-1)*gamma(nu[i])),var[i]+nug[i])
-        #diag(temp2)=var[i]+nug[i]
+        temp2=ifelse(dist0!=0,var[i]*(dist0/beta)^nu[i] * besselK(dist0/beta,nu[i])/(2^(nu[i]-1)*gamma(nu[i])),var[i]+nug[i])
         S[temp,temp1]=temp2
         
       }
       
-      if(i!=j){
+      if(i != j){
         
-        nu1=nu[i]
-        nu2=nu[j]
-        nu3=nu[3]
+        nu1 <- nu[i]
+        nu2 <- nu[j]
+        nu3 <- (nu1 + nu2)/2
         
         #rho=Beta[i,j]*(gamma(nu1+3/2)/gamma(nu1))^(1/2) * (gamma(nu2+3/2)/gamma(nu2))^(1/2)*gamma(nu3)/(gamma(nu3+3/2))
         
-        lai=(dist0/beta[3])^nu3 * besselK(dist0/beta[3],nu3)/(2^(nu3-1)*gamma(nu3))*sqrt(var[i] * var[j])*rho
-        lai[is.na(lai)] <- sqrt(var[i] * var[j])*rho
-        S[temp,temp1]=lai
-        S[temp1,temp]=t(lai)
+        temp3 <- (dist0/beta)^nu3 * besselK(dist0/beta,nu3)/(2^(nu3-1)*gamma(nu3))*sqrt(var[i] * var[j])*rho
+        temp3[is.na(temp3)] <- sqrt(var[i] * var[j])*rho
+        S[temp,temp1] <- temp3
+        S[temp1,temp] <- t(temp3)
       }
     }
   }
-  #S1 <- rbind(cbind(S[1:nrow(loc1),1:nrow(loc1)],S[1:nrow(loc1),(nrow(loc1)*2+1):(nrow(loc1)*3)]),
-  #           cbind(S[(nrow(loc1)*2+1):(nrow(loc1)*3),1:nrow(loc1)],S[(nrow(loc1)*2+1):(nrow(loc1)*3),(nrow(loc1)*2+1):(nrow(loc1)*3)]))
+  
   S1 <- rbind(cbind(S[1:nrow(loc1),1:nrow(loc1)],S[1:nrow(loc1),(nrow(loc1)*3+1):(nrow(loc1)*4)]),
               cbind(S[(nrow(loc1)*3+1):(nrow(loc1)*4),1:nrow(loc1)],S[(nrow(loc1)*3+1):(nrow(loc1)*4),(nrow(loc1)*3+1):(nrow(loc1)*4)]))
   return(S1)
