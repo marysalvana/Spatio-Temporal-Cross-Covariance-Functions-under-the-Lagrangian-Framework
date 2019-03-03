@@ -95,9 +95,9 @@ empirical_st_cov <- function( data1, data2 = NULL, cross, locations, max_time_la
     
       empcov <- list()
     
-      empcov[[1]] <- empcor[(tau*nrow(locations) + 1):((tau + 1)*nrow(locations)),(tau*nrow(locations) + 1):((tau + 1)*nrow(locations))]
-      empcov[[2]] <- empcor[(max_time_lag + 1)*nrow(locations) + (tau*nrow(locations) + 1):((tau + 1)*nrow(locations)),(max_time_lag + 1)*nrow(locations) + (tau*nrow(locations) + 1):((tau + 1)*nrow(locations))]
-      empcov[[3]] <- empcor[(tau*nrow(locations) + 1):((tau + 1)*nrow(locations)),(max_time_lag + 1)*nrow(locations) + (tau*nrow(locations) + 1):((tau + 1)*nrow(locations))]
+      empcov[[1]] <- empcor[1:nrow(locations),(tau*nrow(locations) + 1):((tau + 1)*nrow(locations))]
+      empcov[[2]] <- empcor[(max_time_lag + 1)*nrow(locations) + 1:nrow(locations),(max_time_lag + 1)*nrow(locations) + (tau*nrow(locations) + 1):((tau + 1)*nrow(locations))]
+      empcov[[3]] <- empcor[1:nrow(locations),(max_time_lag + 1)*nrow(locations) + (tau*nrow(locations) + 1):((tau + 1)*nrow(locations))]
       
       loc <- 1
       xlag <- locations[loc,1]-locations[,1]

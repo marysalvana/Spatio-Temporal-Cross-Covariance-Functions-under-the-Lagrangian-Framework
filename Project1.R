@@ -36,7 +36,7 @@ for(aa in 1:length(outsample_loc_index)){
 kappa <- matrix(c(0, 0, 0, 0), ncol=2, byrow=T)
 thets <- c(3.218, 3.736, 794.8, 0.59, 1, 1, 0, 0) #set parameters to empirical estimates of real dataset
 
-materncov <- matern_cov(thets, wind = c(-497426.7319,-39634.6099), max_time_lag = time - 1, p = 2, locations = grid_locations_UTM[pts,])
+materncov <- matern_cov(thets, wind = c(-497426.7319, -39634.6099), max_time_lag = time - 1, p = 2, locations = grid_locations_UTM[pts,])
 
 mod2_params <- matrix(, ncol=8, nrow=100)
 
@@ -60,7 +60,8 @@ for(iter in 1:100){
   theta_init <- c(3.218, 3.736, 794.8, 1, 1, 0.5) #change this values to empirical
   w_init <- c(-500400, -59740)
   mod2 <- fit_model(init = theta_init, wind_init = w_init, mod = 2, weight = 3, empcov_spatial = binned[which(binned[,3]==0),], empcov_st = binned[which(binned[,3] > 0),], nug_eff = F, meters = T, num_iter = 10)
-  mod2_params[iter, ] <- mod2$parameters
+  mod2_params[iter, ] <- mod2$parameters #fix step3
+  
 }
 
 

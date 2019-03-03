@@ -128,6 +128,7 @@ wls<-function(theta, emp_cov1, weights, nug_eff, step, est_param = NULL, meters 
       
       loss <- loss + tloss
     }
+    
     for(i in 3:3){
       
       theo <- ifelse(h!=0, rho*sqrt(var[1]*var[2])*(h/beta)^nu3*besselK(h/beta,nu3)/(2^(nu3-1)*gamma(nu3)), rho*sqrt(var[1]*var[2]))
