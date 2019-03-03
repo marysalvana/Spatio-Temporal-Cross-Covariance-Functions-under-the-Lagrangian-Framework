@@ -11,7 +11,7 @@ matern_cov <- function(theta, wind, max_time_lag, p = 2, locations){
   if (max_time_lag == 0){
     loc1 <- loc1
   } else {
-    for (tt in 1:(max_time_lag - 1)){
+    for (tt in 1:max_time_lag){
       temploc <- matrix(, ncol=2, nrow=nrow(coords1))
       for(rr in 1:nrow(coords1)){
         temploc[rr,] <- c(coords1[rr,1] - tt*w[1], coords1[rr,2] - tt*w[2])
@@ -25,7 +25,7 @@ matern_cov <- function(theta, wind, max_time_lag, p = 2, locations){
   if (max_time_lag == 0){
     loc2 <- loc2
   } else {
-    for (tt in 1:(max_time_lag - 1)){
+    for (tt in 1:max_time_lag){
       temploc <- matrix(, ncol=2, nrow=nrow(coords2))
       for(rr in 1:nrow(coords2)){
         temploc[rr,] <- c(coords2[rr,1] - tt*w[1], coords2[rr,2] - tt*w[2])

@@ -91,27 +91,36 @@ empirical_st_cov <- function( data1, data2 = NULL, cross, locations, max_time_la
     
     empcor <- cor(data1)
     
-    empcov <- list()
+    for(tau in 0:max_time_lag){
     
-    empcov[[1]] <- empcor[1:((max_time_lag + 1)*nrow(locations)),1:((max_time_lag + 1)*nrow(locations))]
-    empcov[[2]] <- empcor[((max_time_lag + 1)*nrow(locations)+1):(p*(max_time_lag + 1)*nrow(locations)),((max_time_lag + 1)*nrow(locations)+1):(p*(max_time_lag + 1)*nrow(locations))]
-    empcov[[3]] <- empcor[1:((max_time_lag + 1)*nrow(locations)),((max_time_lag + 1)*nrow(locations)+1):(p*(max_time_lag + 1)*nrow(locations))]
+      empcov <- list()
     
-    index1 <- which(dist0 <= max(dist0),arr.ind = T)
-    lags <- lags1 <- new_grid_locations[index1[,2],]-new_grid_locations[index1[,1],]
-    index <- cbind(index1[,1],index1[,2]+nrow(new_grid_locations))
-    
-    empirical <- data.frame(lags[,1],lags[,2],rep(seq(0,max_time_lag),each=nrow(lags1)),empcov[[1]][index],
-                            empcov[[2]][index],empcov[[3]][index])
-    colnames(empirical) <- c('xlag','ylag','tlag','var1_cor','var2_cor','cross_cor')
-    
-    emp[[1]] <- empirical
+      empcov[[1]] <- empcor[(tau*nrow(locations) + 1):((tau + 1)*nrow(locations)),(tau*nrow(locations) + 1):((tau + 1)*nrow(locations))]
+      empcov[[2]] <- empcor[(max_time_lag + 1)*nrow(locations) + (tau*nrow(locations) + 1):((tau + 1)*nrow(locations)),(max_time_lag + 1)*nrow(locations) + (tau*nrow(locations) + 1):((tau + 1)*nrow(locations))]
+      empcov[[3]] <- empcor[(tau*nrow(locations) + 1):((tau + 1)*nrow(locations)),(max_time_lag + 1)*nrow(locations) + (tau*nrow(locations) + 1):((tau + 1)*nrow(locations))]
+      
+      loc <- 1
+      xlag <- locations[loc,1]-locations[,1]
+      ylag <- locations[loc,2]-locations[,2]
+      emp_vals <- cbind(empcov[[1]][, loc], empcov[[2]][, loc], empcov[[3]][, loc])
+      
+      for(loc in 1:nrow(locations)){
+        xlag <- c(xlag, locations[loc,1] - locations[,1])
+        ylag <- c(ylag, locations[loc,2] - locations[,2])
+        emp_vals <- rbind(emp_vals, cbind(empcov[[1]][, loc], empcov[[2]][, loc], empcov[[3]][, loc]))
+      }
+      
+      empirical <- data.frame(xlag, ylag, emp_vals)
+      colnames(empirical) <- c('xlag', 'ylag', 'var1_cor', 'var2_cor', 'cross_cor')
+      
+      emp[[tau + 1]] <- empirical
+    }
   }
   
   return(emp)
 }
 
-empirical_covariance_dataframe <- function(data1_cov, data2_cov = NULL, cross_cov = NULL, simulated = F){
+empirical_covariance_dataframe <- function(data1_cov, data2_cov = NULL, cross_cov, simulated = F){
   
   if(!simulated == TRUE){
     empirical_var1 <- data1_cov[[1]]
@@ -143,16 +152,27 @@ empirical_covariance_dataframe <- function(data1_cov, data2_cov = NULL, cross_co
   }else{
     empirical_var1 <- data1_cov[[1]]
     
-    binned.1 <- empirical_var1 %>% group_by(xlag, ylag, tlag) %>% summarize(avg1=mean(var1_cor))
-    binned.2 <- empirical_var2 %>% group_by(xlag, ylag, tlag) %>% summarize(avg1=mean(var2_cor))
-    binned.3 <- empirical_var3 %>% group_by(xlag, ylag, tlag) %>% summarize(avg1=mean(cross_cor))
+    binned.1 <- empirical_var1 %>% group_by(xlag, ylag) %>% summarize(avg1=mean(var1_cor))
+    binned.2 <- empirical_var1 %>% group_by(xlag, ylag) %>% summarize(avg1=mean(var2_cor))
+    binned.3 <- empirical_var1 %>% group_by(xlag, ylag) %>% summarize(avg1=mean(cross_cor))
     
-    binned_orig <- cbind(binned.1$xlag, binned.1$ylag, binned.1$tlag, binned.1$avg1,
+    binned_orig <- cbind(binned.1$xlag, binned.1$ylag, rep(0,nrow(binned.1)), binned.1$avg1,
                          binned.2$avg1, binned.3$avg1)
     
+    if(length(cross) > 1){
+      for (i in 2:length(cross)){
+        empirical_var1 <- data1_cov[[i]]
+        
+        binned.1 <- empirical_var1 %>% group_by(xlag, ylag) %>% summarize(avg1=mean(var1_cor))
+        binned.2 <- empirical_var1 %>% group_by(xlag, ylag) %>% summarize(avg1=mean(var2_cor))
+        binned.3 <- empirical_var1 %>% group_by(xlag, ylag) %>% summarize(avg1=mean(cross_cor))
+        
+        binned_orig <- rbind(binned_orig,cbind(binned.1$xlag,binned.1$ylag,rep(i-1,nrow(binned.1)),binned.1$avg1,
+                                               binned.2$avg1,binned.3$avg1))
+      }
+    }
     colnames(binned_orig) <- c('xlag', 'ylag', 'tlag', 'var1_cor', 'var2_cor', 'cross_cor')
   }
-  
   return(binned_orig)
 }
 

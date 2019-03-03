@@ -21,7 +21,8 @@ load(paste(root,'Data/simulated_locations_only.RData',sep=''))
 ###################     SIMULATED DATA ANALYSIS         ####################
 ############################################################################
 ############################################################################
-
+time <- 5
+insample_loc_index <- 1:80
 outsample_loc_index <- 81:100 #location indices for validation
 
 to_remove <- c()
@@ -31,20 +32,31 @@ for(aa in 1:length(outsample_loc_index)){
 
 #------------------------------------------
 
-kappa <- matrix(c(0,0,0,0),ncol=2,byrow=T)
+kappa <- matrix(c(0, 0, 0, 0),ncol=2,byrow=T)
 thets <- c(3.218, 3.736, 794.8, 0.59, 1, 1, 0, 0) #set parameters to empirical estimated of real dataset
 
-materncov <- matern_cov(thets, wind = c(-497426.7319,-39634.6099), max_time_lag = 2, p = 2, locations = grid_locations_UTM[pts,])
+materncov <- matern_cov(thets, wind = c(-497426.7319,-39634.6099), max_time_lag = time - 1, p = 2, locations = grid_locations_UTM[pts,])
 
 mod2_params <- matrix(,ncol=6,nrow=100)
 
-for(samp in 1:100){
+for(iter in 1:100){
   
-  A <- mvrnorm(n=1000,mu=rep(0,dim(materncov)[1]),Sigma=materncov)
-  A1 <- A[,-to_remove]
+  A <- mvrnorm(n = 1000, mu = rep(0, dim(materncov)[1]), Sigma = materncov)
+  A1 <- A[, -to_remove]
   
-  conso_cor <- empirical_st_cov(data1 = A1, locations = grid_locations_UTM[pts[insample_loc_index],], max_time_lag = 5, simulated = T)  
+  conso_cor <- empirical_st_cov(data1 = A1, locations = grid_locations_UTM[pts[insample_loc_index],], max_time_lag = time - 1, simulated = T)  
   binned <- empirical_covariance_dataframe(data1_cov = conso_cor, simulated = T)
+  
+  if(iter == 1){
+    
+    hlag <- sqrt(binned[which(binned[,3]==0),1]^2 + binned[which(binned[,3]==0),2]^2)
+    
+    #display plots
+    
+    plot(hlag/1000, binned[which(binned[,3]==0),4], pch=3, ylab='', col=1,xlab='Spatial Lag (km)', main='', col.main= "#4EC1DE",ylim=c(0,1))
+    
+  }
+  
   
   theta <- c(3.218,3.736,794.8)
   fit.nsst<-optim(theta, wls2_for_sim, emp_cov1=binned0, weights=3,control=list(maxit=3000,parscale=theta,trace=5))
@@ -72,8 +84,6 @@ for(samp in 1:100){
 # You can use raw netcdf data and pre-process it using preprocessing.R or you load this already preprocessed data
 
 #we use only 25 years of data: 1980-2004 of January
-
-insample_loc_index <- 1:80
 
 nyears = 2004-1980+1
 ndays = 31
