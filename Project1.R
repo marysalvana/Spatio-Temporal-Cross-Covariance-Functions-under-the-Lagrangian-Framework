@@ -62,6 +62,9 @@ for(iter in 1:100){
   mod2 <- fit_model(init = theta_init, wind_init = w_init, mod = 2, weight = 3, empcov_spatial = binned[which(binned[,3]==0),], empcov_st = binned[which(binned[,3] > 0),], nug_eff = F, meters = T, num_iter = 10)
   mod2_params[iter, ] <- mod2$parameters #fix step3
   
+  mod1 <- fit_model(wind_init = w_init, mod = 1, weight = 3, empcov_st = binned[which(binned[,3] > 0),], nug_eff = F, meters = T, est_param.temp = mod2$parameters, est_param.fn.val = mod2$fn_value)
+  mod1_params[iter, ] <- mod1$parameters #fix step3
+  
 }
 
 
