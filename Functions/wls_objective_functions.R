@@ -213,69 +213,6 @@ wls<-function(theta, emp_cov1, weights, nug_eff, step, est_param = NULL, meters,
   }
 }
 
-m1<-function(theta,emp_cov1,weight){
-  
-  nu=mod1_parms[1:2]
-  beta=mod1_parms[3]
-  nug <- c(0,0)
-  var <- c(1,1)
-  rho <- mod1_parms[4]
-  kappa <- mod1_parms[5:6]
-  loss<- 0
-  
-  
-  w <- theta[1:2]
-  Sigma <- matrix(c(theta[3],theta[4],theta[4],theta[5]),ncol=2)
-  
-  nu1 <- nu[1]
-  nu2 <- nu[2]
-  nu3 <- (nu[1]+nu[2])/2
-  
-  R <- matrix(c(-1.1339125 *cos(116.9811232),-1.1339125 *sin(116.9811232),0.8617141*sin(116.9811232),
-                -0.8617141*cos(116.9811232)),ncol=2,byrow=T)
-  
-  hh= emp_cov1[,1:2]%*%R/1000
-  hh2 <- cbind(hh[,1]-kappa[1],hh[,2]-kappa[2])/1000
-  
-  if(min(eigen(Sigma)$val)<0){
-    return(Inf)
-  }else{
-    for(i in 1:2){
-      
-      Int.func <- function(c,hvec){   
-        y.fun  <- function(y) y^(nu[i])*exp(-y)*dmvn(X=hvec[1:2], mu=hvec[3]*w,sigma=(hvec[3]^2*Sigma+beta^2*2*y*diag(2)))
-        sapply(c, y.fun)
-      }
-      lai <- function(xxxx) integrate(Int.func, lower=0, upper=Inf, hvec=xxxx)$val
-      
-      theo <- apply(cbind(hh,1), 1, lai)
-      if(weight==1){
-        tloss<-sum(((emp_cov1[,i+3]-4*pi*beta^2/gamma(nu[i])*theo)/(1.001-4*pi*beta^2/gamma(nu[i])*theo))^2)
-      }else{
-        tloss<-sum(((emp_cov1[,i+3]-4*pi*beta^2/gamma(nu[i])*theo))^2)
-      }
-      loss <- loss+tloss
-    }
-    
-    for(i in 3:3){
-      
-      Int.func <- function(c,hvec){   
-        y.fun  <- function(y) y^(nu3)*exp(-y)*dmvn(X=hvec[1:2], mu=hvec[3]*w,sigma=(hvec[3]^2*Sigma+beta^2*2*y*diag(2)))
-        sapply(c, y.fun)
-      }
-      lai <- function(xxxx) integrate(Int.func, lower=0, upper=Inf, hvec=xxxx)$val
-      theo <- apply(cbind(hh2,1), 1, lai)
-      if(weight==1){
-        tloss<-sum(((emp_cov1[,i+3]-4*pi*beta^2/gamma(nu3)*theo)/(1.001-4*pi*beta^2/gamma(nu3)*theo))^2)
-      }else{
-        tloss<-sum(((emp_cov1[,i+3]-4*pi*beta^2/gamma(nu3)*theo))^2)
-      }
-      loss <- loss+tloss
-    }
-    return(loss)
-  }
-}
-
 wls2 <- function(theta, emp_cov1, weights) {
   
   nu=theta[1:2]
