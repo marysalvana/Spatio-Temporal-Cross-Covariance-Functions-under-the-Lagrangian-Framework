@@ -34,6 +34,7 @@ matern_theta_strong=c(0.5,2,4,0.8)
 thets <- matern_theta_strong
 materncov <- matern_cov_regular_grid_v4(thets,c(.05001,.05001),time=t)
 
+set.seed(12345678)
 A <- mvrnorm(1000, rep(0,dim(materncov)[1]),materncov)
 
 N.mc <- 4
@@ -62,60 +63,93 @@ mc.locations <- matrix(c(mc.locations[,1], mc.locations[,2]), ncol=2, byrow=F)
 
 K <- dim(mc.locations)[1]
 
-#===========================================================================
-# Check the mixture component locations
-#===========================================================================
-check.mc.locs <- mc_N( coords, mc.locations, fit.radius )
-lambda.w <- ( 0.5*min(dist(mc.locations)) )^2
-
-mean.model = data ~ 1
-data <- A[1:400]
-OLS.model1 <- lm(mean.model, x=TRUE)
-data <- A[401:800]
-OLS.model2 <- lm(mean.model, x=TRUE)
-Xmat <- matrix( unname( OLS.model1$x ), nrow=2*N )
-
-#===========================================================================
-# Specify lower, upper, and initial parameter values for optim()
-#===========================================================================
-
 max.distance <- sqrt(sum((c(lon_min,lat_min) - c(lon_max,lat_max))^2))
-
-resid.var <- (max(summary(OLS.model1)$sigma,summary(OLS.model2)$sigma))^2
 
 coords_mc_dist <- StatMatch::mahalanobis.dist(data.x = coords, data.y = mc.locations, vc = diag(2))
 
-k = 2
+k = 4
 ind_local <- (coords_mc_dist[,k] <= fit.radius)
 
 # Subset
 temp.locations <- coords[ind_local,]
-n.fit <- dim(temp.locations)[1]
-
-if(!is.matrix(A)){
-  temp.data <- A[rep(ind_local,2*t)]
-}else{
-  temp.data <- A[,rep(ind_local,2*t)]
-}
-
-Xtemp <- as.matrix(rep(1,length(which(ind_local==TRUE))),ncol=1)
-
-#####################################################
-# Local estimation
-
 data_matrix = A[,rep(ind_local,2)]
 
 var1_cov <- empirical_st_cov(data1 = data_matrix[,1:(ncol(data_matrix)/2)], cross = F, locations = temp.locations, max_time_lag = 0)  
 var2_cov <- empirical_st_cov(data1 = data_matrix[,(ncol(data_matrix)/2+1):ncol(data_matrix)], cross = F, locations = temp.locations, max_time_lag = 0)  
 cross <- empirical_st_cov(data1 = data_matrix[,1:(ncol(data_matrix)/2)], data2 = data_matrix[,(ncol(data_matrix)/2+1):ncol(data_matrix)], cross = T, locations = temp.locations, max_time_lag = 0)  
 
-binned <- empirical_covariance_dataframe(data1_cov = var1_cov, data2_cov = var2_cov, cross_cov = cross)
-
-hlag <- sqrt(binned[which(binned[,3]==0),1]^2 + binned[which(binned[,3]==0),2]^2)
+binned <- empirical_covariance_dataframe(data1_cov = var1_cov, data2_cov = var2_cov, cross_cov = cross, params = c(0.07129353, 0.07016386, 0.7853675, 0.07064383, 0.07063065, 0.7853982))
 
 #Check plots
 
-plot(hlag, binned[which(binned[,3]==0),5], pch=3, ylab='', col=1,xlab='Spatial Lag (km)', main='', col.main= "#4EC1DE",ylim=c(0,1))
+nu <- c(0.5021492, 1.984922)
+nu3 <- (nu[1]+nu[2])/2
+beta <- 3.992491
+nug <-  c(0,0)
+var <- c(1,1)
+rho <- 0.7997821
+
+h <- seq(min(hlag),max(hlag), length.out = 1000)
+
+par(mfrow = c(2,3))
+par(pty="s") 
+plot(sqrt(binned[which(binned[,3]==0),1]^2+binned[which(binned[,3]==0),2]^2), binned[which(binned[,3]==0),4], pch=3, ylab='Correlation', xlab='Spatial Lag (km)',
+     main='', col=1, ylim=c(0,1), col.main= "#4EC1DE")
+mtext(expression(C[11]), side = 3, line = 0, adj = 0.5, cex = 0.65, font=2)
+i=1
+
+theo <- ifelse(h!=0,var[i]*(h/beta[i])^nu[i]*besselK(h/beta[i],nu[i])/(2^(nu[i]-1)*gamma(nu[i])),var[i]+nug[i])
+lines(h,theo,col='#FA5B3D',lwd=2)
+
+plot(sqrt(binned[which(binned[,3]==0),1]^2+binned[which(binned[,3]==0),2]^2), binned[which(binned[,3]==0),5], pch=3,ylab='',xlab='Spatial Lag (km)',
+     main='', col=1, ylim=c(0,1), col.main= "#4EC1DE")
+mtext(expression(C[22]), side = 3, line = 0, adj = 0.5, cex = 0.65, font=2)
+
+i=2
+
+theo <- ifelse(h!=0,var[i]*(h/beta)^nu[i]*besselK(h/beta,nu[i])/(2^(nu[i]-1)*gamma(nu[i])),var[i]+nug[i])
+lines(h,theo,col='#FA5B3D',lwd=2)
+
+plot(sqrt(binned[which(binned[,3]==0),1]^2+binned[which(binned[,3]==0),2]^2), binned[which(binned[,3]==0),6], pch=3, ylab='', col=1,xlab='Spatial Lag (km)',
+     main='', col.main= "#4EC1DE",ylim=c(0,1))
+mtext(expression(C[12]), side = 3, line = 0, adj = 0.5, cex = 0.65, font=2)
+
+
+theo <- ifelse(h!=0,rho*sqrt(var[1]*var[2])*(h/beta)^nu3*besselK(h/beta,nu3)/(2^(nu3-1)*gamma(nu3)),rho*sqrt(var[1]*var[2]))
+lines(h,theo,col='#FF3855',lwd=2)
+
+
+################################################################
+
+#par(mfrow = c(1,3))
+par(pty="s") 
+plot(binned[which(binned[,3]==0),7], binned[which(binned[,3]==0),4], pch=3, ylab='Correlation', xlab='Spatial Lag (km)',
+     main='', col=1, ylim=c(0,1), col.main= "#4EC1DE")
+mtext(expression(C[11]), side = 3, line = 0, adj = 0.5, cex = 0.65, font=2)
+i=1
+
+h <- seq(min(binned[which(binned[,3]==0),7]), max(binned[which(binned[,3]==0),7]), length.out = 1000)
+theo <- ifelse(h!=0,var[i]*(h/beta[i])^nu[i]*besselK(h/beta[i],nu[i])/(2^(nu[i]-1)*gamma(nu[i])),var[i]+nug[i])
+lines(h,theo,col='#FA5B3D',lwd=2)
+
+plot(binned[which(binned[,3]==0),8], binned[which(binned[,3]==0),5], pch=3,ylab='',xlab='Spatial Lag (km)',
+     main='', col=1, ylim=c(0,1), col.main= "#4EC1DE")
+mtext(expression(C[22]), side = 3, line = 0, adj = 0.5, cex = 0.65, font=2)
+
+i=2
+h <- seq(min(binned[which(binned[,3]==0),8]), max(binned[which(binned[,3]==0),8]), length.out = 1000)
+
+theo <- ifelse(h!=0,var[i]*(h/beta)^nu[i]*besselK(h/beta,nu[i])/(2^(nu[i]-1)*gamma(nu[i])),var[i]+nug[i])
+lines(h,theo,col='#FA5B3D',lwd=2)
+
+plot(binned[which(binned[,3]==0),9], binned[which(binned[,3]==0),6], pch=3, ylab='', col=1,xlab='Spatial Lag (km)',
+     main='', col.main= "#4EC1DE",ylim=c(0,1))
+mtext(expression(C[12]), side = 3, line = 0, adj = 0.5, cex = 0.65, font=2)
+
+h <- seq(min(binned[which(binned[,3]==0),9]), max(binned[which(binned[,3]==0),9]), length.out = 1000)
+
+theo <- ifelse(h!=0,rho*sqrt(var[1]*var[2])*(h/beta)^nu3*besselK(h/beta,nu3)/(2^(nu3-1)*gamma(nu3)),rho*sqrt(var[1]*var[2]))
+lines(h,theo,col='#FF3855',lwd=2)
 
 
 
