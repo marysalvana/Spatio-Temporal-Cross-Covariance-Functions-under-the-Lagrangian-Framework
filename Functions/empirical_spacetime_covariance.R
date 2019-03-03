@@ -120,7 +120,7 @@ empirical_st_cov <- function( data1, data2 = NULL, cross, locations, max_time_la
   return(emp)
 }
 
-empirical_covariance_dataframe <- function(data1_cov, data2_cov = NULL, cross_cov, simulated = F){
+empirical_covariance_dataframe <- function(data1_cov, data2_cov = NULL, cross_cov = NULL, simulated = F){
   
   if(!simulated == TRUE){
     empirical_var1 <- data1_cov[[1]]
@@ -134,8 +134,8 @@ empirical_covariance_dataframe <- function(data1_cov, data2_cov = NULL, cross_co
     binned_orig <- cbind(binned.1$xlag, binned.1$ylag, rep(0,nrow(binned.1)), binned.1$avg1,
                          binned.2$avg1, binned.3$avg1)
     
-    if(length(cross) > 1){
-      for (i in 2:length(cross)){
+    if(length(data1_cov) > 1){
+      for (i in 2:length(data1_cov)){
         empirical_var1 <- data1_cov[[i]]
         empirical_var2 <- data2_cov[[i]]
         empirical_var3 <- cross_cov[[i]]
@@ -159,8 +159,8 @@ empirical_covariance_dataframe <- function(data1_cov, data2_cov = NULL, cross_co
     binned_orig <- cbind(binned.1$xlag, binned.1$ylag, rep(0,nrow(binned.1)), binned.1$avg1,
                          binned.2$avg1, binned.3$avg1)
     
-    if(length(cross) > 1){
-      for (i in 2:length(cross)){
+    if(length(data1_cov) > 1){
+      for (i in 2:length(data1_cov)){
         empirical_var1 <- data1_cov[[i]]
         
         binned.1 <- empirical_var1 %>% group_by(xlag, ylag) %>% summarize(avg1=mean(var1_cor))

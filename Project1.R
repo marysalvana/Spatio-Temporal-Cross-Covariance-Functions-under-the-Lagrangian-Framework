@@ -21,6 +21,7 @@ load(paste(root,'Data/simulated_locations_only.RData',sep=''))
 ###################     SIMULATED DATA ANALYSIS         ####################
 ############################################################################
 ############################################################################
+
 time <- 5
 insample_loc_index <- 1:80
 outsample_loc_index <- 81:100 #location indices for validation
@@ -32,12 +33,12 @@ for(aa in 1:length(outsample_loc_index)){
 
 #------------------------------------------
 
-kappa <- matrix(c(0, 0, 0, 0),ncol=2,byrow=T)
-thets <- c(3.218, 3.736, 794.8, 0.59, 1, 1, 0, 0) #set parameters to empirical estimated of real dataset
+kappa <- matrix(c(0, 0, 0, 0), ncol=2, byrow=T)
+thets <- c(3.218, 3.736, 794.8, 0.59, 1, 1, 0, 0) #set parameters to empirical estimates of real dataset
 
 materncov <- matern_cov(thets, wind = c(-497426.7319,-39634.6099), max_time_lag = time - 1, p = 2, locations = grid_locations_UTM[pts,])
 
-mod2_params <- matrix(,ncol=6,nrow=100)
+mod2_params <- matrix(, ncol=8, nrow=100)
 
 for(iter in 1:100){
   
@@ -48,28 +49,18 @@ for(iter in 1:100){
   binned <- empirical_covariance_dataframe(data1_cov = conso_cor, simulated = T)
   
   if(iter == 1){
-    
     hlag <- sqrt(binned[which(binned[,3]==0),1]^2 + binned[which(binned[,3]==0),2]^2)
-    
     #display plots
-    
-    plot(hlag/1000, binned[which(binned[,3]==0),4], pch=3, ylab='', col=1,xlab='Spatial Lag (km)', main='', col.main= "#4EC1DE",ylim=c(0,1))
-    
+    par(mfrow=c(1,3))
+    plot(hlag/1000, binned[which(binned[,3]==0), 4], pch=3, ylab='', col=1,xlab='Spatial Lag (km)', main='', col.main= "#4EC1DE",ylim=c(0,1))
+    plot(hlag/1000, binned[which(binned[,3]==0), 5], pch=3, ylab='', col=1,xlab='Spatial Lag (km)', main='', col.main= "#4EC1DE",ylim=c(0,1))
+    plot(hlag/1000, binned[which(binned[,3]==0), 6], pch=3, ylab='', col=1,xlab='Spatial Lag (km)', main='', col.main= "#4EC1DE",ylim=c(0,1))
   }
   
-  
-  theta <- c(3.218,3.736,794.8)
-  fit.nsst<-optim(theta, wls2_for_sim, emp_cov1=binned0, weights=3,control=list(maxit=3000,parscale=theta,trace=5))
-  mod2_params.temp <- tempo_theta <- fit.nsst$par
-  
-  theta <- 0.5
-  fit.nsst<-optim(theta, wls3_for_sim, emp_cov1=binned0, weights=3,method='SANN', control=list(maxit=3000,parscale=theta,trace=5))
-  mod2_params.temp2 <-c(mod2_params.temp,fit.nsst$par)
-  tempo_theta <- mod2_params.temp2
-  
-  theta <- c(-500400,-59740)
-  fit.nsst<-optim(theta, m2_no_decay, emp_cov1=binned_orig2, weights=3, control=list(maxit=3000,parscale=theta,trace=5))
-  mod2_params[samp,] <- c(mod2_params.temp2,fit.nsst$par/1000)
+  theta_init <- c(3.218, 3.736, 794.8, 1, 1, 0.5) #change this values to empirical
+  w_init <- c(-500400, -59740)
+  mod2 <- fit_model(init = theta_init, wind_init = w_init, mod = 2, weight = 3, empcov_spatial = binned[which(binned[,3]==0),], empcov_st = binned[which(binned[,3] > 0),], nug_eff = F, meters = T, num_iter = 10)
+  mod2_params[iter, ] <- mod2$parameters
 }
 
 
