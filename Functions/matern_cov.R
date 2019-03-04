@@ -102,8 +102,8 @@ multivariate_matern_semi_explicit_regular_grid_v2 <-function(theta,wind,wind_var
   nu=theta[1:2]
   beta=theta[3]
   rot=theta[4]
-  var <- theta[7:8]
-  nug <- theta[5:6]
+  nug <- theta[7:8]
+  var <- theta[5:6]
   
   loc <- coords <- locations
   

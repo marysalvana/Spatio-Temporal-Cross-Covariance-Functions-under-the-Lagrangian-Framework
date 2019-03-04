@@ -71,8 +71,12 @@ for(iter in 1:100){
 m1_cov <- simulate_model(mod = 1, theta = thets, wind = c(-497426.7319, -39634.6099), wind_var = 0.05*diag(2), maxtimelag = 0, p = 2, locations = grid_locations_UTM[pts,], meters = T)
 
 
-#matern_theta_strong=c(0.5,1.5,0.23,0.8,0,0,1,1)
+#matern_theta_strong=c(0.5,1.5,0.23,0.8,1,1,0,0)
 #m1_cov <- multivariate_matern_semi_explicit_regular_grid_v2(theta=matern_theta_strong,wind= c(1,1),wind_var = matrix(c(0.01,0.00009,0.00009,0.00001),ncol=2),time=2, locations = grid_locations_UTM[pts,]/1000000)
+
+matern_theta_strong=c(0.5,1.5,1200,0.59,1,1,0,0)
+m1_cov <- multivariate_matern_semi_explicit_regular_grid_v2(theta=matern_theta_strong,wind= c(1,1),wind_var = matrix(c(0.01,0.00009,0.00009,0.00001),ncol=2),time=1, locations = grid_locations_UTM[pts,]/1000)
+
 
 m1_cov <- multivariate_matern_semi_explicit_regular_grid_v2(theta=thets,wind= c(100,100),wind_var = matrix(c(0.01,0.00009,0.00009,0.00001),ncol=2),time=2, locations = grid_locations_UTM[pts,]/1000)
 chol(m1_cov)
