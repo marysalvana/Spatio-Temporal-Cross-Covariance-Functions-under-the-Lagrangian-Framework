@@ -10,6 +10,9 @@ if(WORKSTATION == 1){
 source(file=paste(root,"Functions/load_packages.R",sep=''))
 source(file=paste(root,"Functions/empirical_spacetime_covariance.R",sep=''))
 source(file=paste(root,"Functions/data_format.R",sep=''))
+source(file=paste(root,"Functions/matern_cov.R",sep=''))
+source(file=paste(root,"Functions/toeplitz_mat.R",sep=''))
+
 
 setwd(paste(root,'Figures',sep=''))
 
@@ -45,28 +48,31 @@ for(iter in 1:100){
   A <- mvrnorm(n = 1000, mu = rep(0, dim(materncov)[1]), Sigma = materncov)
   A1 <- A[, -to_remove]
   
-  conso_cor <- empirical_st_cov(data1 = A1, locations = grid_locations_UTM[pts[insample_loc_index],], max_time_lag = time - 1, simulated = T)  
+  conso_cor <- empirical_st_cov(data1 = A1, locations = grid_locations_UTM[pts[insample_loc_index], ], max_time_lag = time - 1, simulated = T)  
   binned <- empirical_covariance_dataframe(data1_cov = conso_cor, simulated = T)
   
-  if(iter == 1){
-    hlag <- sqrt(binned[which(binned[,3]==0),1]^2 + binned[which(binned[,3]==0),2]^2)
+  #if(iter == 1){
+  #  hlag <- sqrt(binned[which(binned[,3]==0), 1]^2 + binned[which(binned[,3]==0), 2]^2)
     #display plots
-    par(mfrow=c(1,3))
-    plot(hlag/1000, binned[which(binned[,3]==0), 4], pch=3, ylab='', col=1,xlab='Spatial Lag (km)', main='', col.main= "#4EC1DE",ylim=c(0,1))
-    plot(hlag/1000, binned[which(binned[,3]==0), 5], pch=3, ylab='', col=1,xlab='Spatial Lag (km)', main='', col.main= "#4EC1DE",ylim=c(0,1))
-    plot(hlag/1000, binned[which(binned[,3]==0), 6], pch=3, ylab='', col=1,xlab='Spatial Lag (km)', main='', col.main= "#4EC1DE",ylim=c(0,1))
-  }
+  #  par(mfrow = c(1,3))
+  #  plot(hlag/1000, binned[which(binned[,3]==0), 4], pch=3, ylab='', col=1,xlab='Spatial Lag (km)', main='', col.main= "#4EC1DE", ylim=c(0,1))
+  #  plot(hlag/1000, binned[which(binned[,3]==0), 5], pch=3, ylab='', col=1,xlab='Spatial Lag (km)', main='', col.main= "#4EC1DE", ylim=c(0,1))
+  #  plot(hlag/1000, binned[which(binned[,3]==0), 6], pch=3, ylab='', col=1,xlab='Spatial Lag (km)', main='', col.main= "#4EC1DE", ylim=c(0,1))
+  #}
   
   theta_init <- c(3.218, 3.736, 794.8, 1, 1, 0.5) #change this values to empirical
   w_init <- c(-500400, -59740)
   mod2 <- fit_model(init = theta_init, wind_init = w_init, mod = 2, weight = 3, empcov_spatial = binned[which(binned[,3]==0),], empcov_st = binned[which(binned[,3] > 0),], nug_eff = F, meters = T, num_iter = 10)
-  mod2_params[iter, ] <- mod2$parameters #fix step3
-  
-  mod1 <- fit_model(wind_init = w_init, mod = 1, weight = 3, empcov_st = binned[which(binned[,3] > 0),], nug_eff = F, meters = T, est_param.temp = mod2$parameters, est_param.fn.val = mod2$fn_value)
-  mod1_params[iter, ] <- mod1$parameters #fix step3
-  
+  mod2_params[iter, ] <- mod2$parameters
 }
 
+#m1_cov <- matern_random_cov(thets, wind = c(-497426.7319, -39634.6099), wind_var = 0.05*diag(2), max_time_lag = 1, p = 2, locations = grid_locations_UTM[pts,])
+
+m1_cov <- simulate_model(mod = 1, theta = thets, wind = c(-497426.7319, -39634.6099), wind_var = 0.05*diag(2), maxtimelag = 0, p = 2, locations = grid_locations_UTM[pts,], meters = T)
+chol(m1_cov)
+
+mod1 <- fit_model(wind_init = c(-70.77,-8,18695590.2,6748080.7,44478970.2), mod = 1, weight = 3, empcov_st = binned[which(binned[,3] > 0),], nug_eff = F, meters = T, est_param.temp = mod2$parameters, est_param.fn.val = mod2$fn_value)
+mod1_params[iter, ] <- mod1$parameters 
 
 ############################################################################
 ############################################################################

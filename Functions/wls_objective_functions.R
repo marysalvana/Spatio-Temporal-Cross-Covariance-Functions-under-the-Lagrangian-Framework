@@ -1,4 +1,5 @@
-fit_model <- function(init = NULL, wind_init, mod, weight, empcov_spatial = NULL, empcov_st, nug_eff = F, meters = T, num_iter, est_param.temp = NULL, est_param.fn.val = NULL){
+fit_model <- function(init = NULL, wind_init, mod, weight, empcov_spatial = NULL, empcov_st, nug_eff = F, meters = T, num_iter, 
+                      est_param.temp = NULL, est_param.fn.val = NULL, aniso = F, rotation_matrix = NULL){
   
   # num_iter : number of loops to run optim
   if(mod == 1){
@@ -32,6 +33,15 @@ wls<-function(theta, emp_cov1, weights, nug_eff, step, est_param = NULL, meters,
   # nug_eff: T means we also need to estimate nugget effect
   
   loss <- 0
+  
+  if(!aniso == T){
+    R <- diag(2)
+  }else{
+    R <- rotation_matrix
+  }
+  
+  #R <- matrix(c(-1.1339125 *cos(116.9811232),-1.1339125 *sin(116.9811232),0.8617141*sin(116.9811232),
+  #              -0.8617141*cos(116.9811232)),ncol=2,byrow=T)
   
   if(meters == T){
     h <- sqrt(emp_cov1[,1]^2 + emp_cov1[,2]^2)/1000
@@ -152,26 +162,17 @@ wls<-function(theta, emp_cov1, weights, nug_eff, step, est_param = NULL, meters,
     }else{
       
       w <- theta[1:2]
-      Sigma <- matrix(c(theta[3],theta[4],theta[4],theta[5]),ncol=2)
-      
-      #R <- matrix(c(-1.1339125 *cos(116.9811232),-1.1339125 *sin(116.9811232),0.8617141*sin(116.9811232),
-      #              -0.8617141*cos(116.9811232)),ncol=2,byrow=T)
-      
-      if(!aniso == T){
-        R <- diag(2)
-      }else{
-        R <- rotation_matrix
-      }
+      Sigma <- matrix(c(theta[3], theta[4], theta[4], theta[5]), ncol=2)
       
       if(meters == T){
-      hh= emp_cov1[,1:2]%*%R/1000
-      hh2 <- cbind(hh[,1]-kappa[1],hh[,2]-kappa[2])/1000
+        hh <- emp_cov1[,1:2]%*%R/1000
+        hh2 <- cbind(hh[,1] - kappa[1], hh[,2] - kappa[2])/1000
       }else{
-        hh= emp_cov1[,1:2]%*%R
-        hh2 <- cbind(hh[,1]-kappa[1],hh[,2]-kappa[2])
+        hh <- emp_cov1[,1:2]%*%R
+        hh2 <- cbind(hh[,1] - kappa[1], hh[,2] - kappa[2])
       }
       
-      if(min(eigen(Sigma)$val)<0){
+      if(min(eigen(Sigma)$val) < 0){
         return(Inf)
       }else{
         for(i in 1:2){
@@ -183,7 +184,7 @@ wls<-function(theta, emp_cov1, weights, nug_eff, step, est_param = NULL, meters,
           lai <- function(xxxx) integrate(Int.func, lower=0, upper=Inf, hvec=xxxx)$val
           
           theo <- apply(cbind(hh, 1), 1, lai)
-          if(weight==1){
+          if(weight == 3){
             tloss <- sum(((emp_cov1[,i+3] - 4*pi*beta^2/gamma(nu[i])*theo)/(1.001 - 4*pi*beta^2/gamma(nu[i])*theo))^2)
           }else{
             tloss <- sum(((emp_cov1[,i+3] - 4*pi*beta^2/gamma(nu[i])*theo))^2)
@@ -199,16 +200,15 @@ wls<-function(theta, emp_cov1, weights, nug_eff, step, est_param = NULL, meters,
           }
           lai <- function(xxxx) integrate(Int.func, lower=0, upper=Inf, hvec=xxxx)$val
           theo <- apply(cbind(hh2, 1), 1, lai)
-          if(weight==1){
+          if(weight == 3){
             tloss <- sum(((emp_cov1[,i+3] - 4*pi*beta^2/gamma(nu3)*theo)/(1.001 - 4*pi*beta^2/gamma(nu3)*theo))^2)
           }else{
             tloss <- sum(((emp_cov1[,i+3] - 4*pi*beta^2/gamma(nu3)*theo))^2)
           }
-          loss <- loss+tloss
+          loss <- loss + tloss
         }
         return(loss)
       }
-      
     }
   }
 }
