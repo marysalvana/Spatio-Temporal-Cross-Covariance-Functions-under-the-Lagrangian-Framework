@@ -275,6 +275,97 @@ matern_random_cov_scratch <-function(theta, wind, wind_var, max_time_lag, q, new
   return(S)
 }
 
+matern_random_cov_scratch_v2 <-function(theta, wind, wind_var, max_time_lag, q, new_locations, meters = T){
+  
+  Sigma <- wind_var
+  
+  nu <- theta[1:2]
+  beta <- theta[3]
+  rho <- theta[4]
+  var <- theta[5:6]
+  nug <- theta[7:8]
+  
+  if(meters == T){
+    w <- wind/1000
+    loc <- coords <- new_locations/1000
+  }else{
+    w <- wind
+    loc <- coords <- new_locations
+  }
+  
+  SS <- list()
+  
+  S=matrix(NA,  q*nrow(coords)*(max_time_lag + 1), q*nrow(coords)*(max_time_lag + 1))
+  
+  for(i in 1:q){
+    for(j in 1:i){
+      
+      temp2=(i-1)*(nrow(coords)*(max_time_lag + 1)) + 1:(nrow(coords)*(max_time_lag + 1))
+      temp1=(j-1)*(nrow(coords)*(max_time_lag + 1)) + 1:(nrow(coords)*(max_time_lag + 1))
+      
+      if(i==j){
+        
+        for(tt in 0:max_time_lag){
+          temploc <- matrix(, ncol=nrow(coords), nrow=nrow(coords))
+          for(rr in 1:nrow(coords)){
+            for(ss in 1:nrow(coords)){
+              cat(tt,rr,ss,'\n')
+              h <- c(coords[rr,1]-coords[ss,1],coords[rr,2]-coords[ss,2])
+              emp_cov1 <- c(h[1], h[2], tt)
+              Int.func <- function(c, hvec){   
+                y.fun  <- function(y) y^(nu[i])*exp(-y)*dmvn(X = hvec[1:2], mu = hvec[3]*w, sigma = (hvec[3]^2*Sigma + beta^2*2*y*diag(2)))
+                sapply(c, y.fun)
+              }
+              lai <- function(xxxx) integrate(Int.func, lower=0, upper=Inf, hvec=xxxx, abs.tol = 1e-20, rel.tol = 1e-21)$val
+              temp <- lai(emp_cov1) 
+              
+              temploc[rr,ss] <- ifelse(tt == 0 & h[1] == 0 & h[2] == 0, var[i], 4*pi*temp*beta^2/gamma(nu[i]))
+            }
+          }
+          SS[[tt + 1]] <- temploc
+        }
+        S2 <- toeplitz_mat(SS)
+        S[temp2,temp1] <- S2 
+        
+      }
+      
+      if(i != j){
+        
+        nu1 <- nu[i]
+        nu2 <- nu[j]
+        nu3 <- (nu1+nu2)/2
+        
+        #rho=rot*(gamma(nu1+3/2)/gamma(nu1))^(1/2) * (gamma(nu2+3/2)/gamma(nu2))^(1/2)*gamma(nu3)/(gamma(nu3+3/2))
+        
+        for(tt in 0:max_time_lag){
+          temploc <- matrix(, ncol=nrow(coords), nrow=nrow(coords))
+          for(rr in 1:nrow(coords)){
+            for(ss in 1:nrow(coords)){
+              cat(tt,rr,ss,'\n')
+              
+              h <- c(coords[rr,1]-coords[ss,1],coords[rr,2]-coords[ss,2])
+              emp_cov1 <- c(h[1], h[2], tt)
+              Int.func <- function(c, hvec){   
+                y.fun  <- function(y) y^(nu3)*exp(-y)*dmvn(X = hvec[1:2], mu = hvec[3]*w, sigma = (hvec[3]^2*Sigma + beta^2*2*y*diag(2)))
+                sapply(c, y.fun)
+              }
+              lai <- function(xxxx) integrate(Int.func, lower=0, upper=Inf, hvec=xxxx, abs.tol = 1e-20, rel.tol = 1e-21)$val
+              temp <- lai(emp_cov1) 
+              
+              temploc[rr,ss] <- ifelse(tt == 0 & h[1] == 0 & h[2] == 0, sqrt(var[i] * var[j])*rho,sqrt(var[i] * var[j])*rho*4*pi*temp*beta^2/gamma(nu3))
+            }
+          }
+          SS[[tt + 1]] <- temploc
+        }
+        S2 <- toeplitz_mat(SS)
+        S[temp2,temp1] <- S2
+        S[temp1,temp2] <- t(S2)
+      }
+    }
+  }
+  return(S)
+}
+
 matern_random_cov <-function(theta, wind, wind_var, max_time_lag, q, new_locations, meters = T){
   
   Sigma <- wind_var
