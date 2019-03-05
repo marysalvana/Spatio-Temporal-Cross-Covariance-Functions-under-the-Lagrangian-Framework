@@ -68,20 +68,25 @@ for(iter in 1:100){
 
 #m1_cov <- matern_random_cov(thets, wind = c(-497426.7319, -39634.6099), wind_var = 0.05*diag(2), max_time_lag = 1, p = 2, locations = grid_locations_UTM[pts,])
 
-m1_cov <- simulate_model(mod = 1, theta = thets, wind = c(-497426.7319, -39634.6099), wind_var = 0.05*diag(2), maxtimelag = 0, p = 2, locations = grid_locations_UTM[pts,], meters = T)
+m2_cov <- simulate_model(mod = 2, theta = matern_theta_strong, wind = c(-497426.7319, -39634.6099), wind_var = 0.05*diag(2), maxtimelag = 0, p = 2, locations = grid_locations_UTM[pts,], meters = T)
 
 
-#matern_theta_strong=c(0.5,1.5,0.23,0.8,1,1,0,0)
-#m1_cov <- multivariate_matern_semi_explicit_regular_grid_v2(theta=matern_theta_strong,wind= c(1,1),wind_var = matrix(c(0.01,0.00009,0.00009,0.00001),ncol=2),time=2, locations = grid_locations_UTM[pts,]/1000000)
+matern_theta_strong=c(0.5,1.5,0.23,0.8,1,1,0,0)
+m1_cov <- multivariate_matern_semi_explicit_regular_grid_v2(theta=matern_theta_strong,wind= c(1,1),wind_var = matrix(c(0.01,0.00009,0.00009,0.00001),ncol=2),time=2, locations = grid_locations_UTM[pts,]/1000000)
 
 matern_theta_strong=c(0.5,1.5,1200,0.59,1,1,0,0)
-m1_cov <- multivariate_matern_semi_explicit_regular_grid_v2(theta=matern_theta_strong,wind= c(1,1),wind_var = matrix(c(0.01,0.00009,0.00009,0.00001),ncol=2),time=1, locations = grid_locations_UTM[pts,]/1000)
-
-
-m1_cov <- multivariate_matern_semi_explicit_regular_grid_v2(theta=thets,wind= c(100,100),wind_var = matrix(c(0.01,0.00009,0.00009,0.00001),ncol=2),time=2, locations = grid_locations_UTM[pts,]/1000)
+m1_cov <- multivariate_matern_semi_explicit_regular_grid_v2(theta=matern_theta_strong,wind= c(100,100),wind_var = matrix(c(1,0.00009,0.00009,1),ncol=2),time=2, locations = grid_locations_UTM[pts,]/1000)
 chol(m1_cov)
-isSymmetric(m1_cov)
 image.plot(m1_cov)
+isSymmetric(m1_cov)
+
+#matern_theta_strong=c(0.5,1.5,1200,0.59,1,1,0,0)
+matern_theta_strong=c(3,4.5,2000,0.59,1,1,0,0)
+m1_cov <- matern_random_cov_scratch(theta=matern_theta_strong, wind= c(100,100),wind_var = matrix(c(10,0.00009,0.00009,10),ncol=2), max_time_lag = 0, q=2, new_locations=grid_locations_UTM[pts,], meters = T)
+chol(m1_cov)
+image.plot(m1_cov)
+
+image.plot(m2_cov[1:10,1:10]-m1_cov[1:10,1:10])
 
 mod1 <- fit_model(wind_init = c(-70.77,-8,18695590.2,6748080.7,44478970.2), mod = 1, weight = 3, empcov_st = binned[which(binned[,3] > 0),], nug_eff = F, meters = T, est_param.temp = mod2$parameters, est_param.fn.val = mod2$fn_value)
 mod1_params[iter, ] <- mod1$parameters 

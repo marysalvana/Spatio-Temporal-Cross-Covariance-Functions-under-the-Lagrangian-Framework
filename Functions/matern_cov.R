@@ -6,12 +6,12 @@ simulate_model <- function(mod, theta, wind, wind_var = NULL, maxtimelag, p = 2,
   if(mod == 1){
     cov.mod <- matern_random_cov(theta, wind, wind_var, max_time_lag = maxtimelag, q = p, new_locations = locations)
   }else{
-    cov.mod <- matern_random_cov(theta, wind, max_time_lag = maxtimelag, q = p, new_locations = locations)
+    cov.mod <- matern_cov(theta, wind, max_time_lag = maxtimelag, q = p, new_locations = locations)
   }
   return(cov.mod)
 }
 
-matern_cov <- function(theta, wind, max_time_lag, p = 2, new_locations = locations, meters = T){
+matern_cov <- function(theta, wind, max_time_lag, q, new_locations = locations, meters = T){
   
   w <- wind
   
