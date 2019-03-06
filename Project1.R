@@ -88,6 +88,26 @@ for(iter in 1:100){
   
 }
 
+thets <- c(3,4,281.6,700,1,1,0.838,0.545,0,0.999)
+
+sim.cov <- simulate_model(mod = 3, theta = thets, wind = c(-2600000, -661200, 3604000, 1947000), maxtimelag = 1, p = 2, locations = grid_locations_UTM[pts,], meters = T)
+
+mod3_params <- matrix(, ncol=14, nrow=100)
+
+for(iter in 1:1){
+  
+  A <- mvrnorm(n = 1000, mu = rep(0, dim(sim.cov)[1]), Sigma = sim.cov)
+  A1 <- A[, -to_remove]
+  
+  conso_cor <- empirical_st_cov(data1 = A1, locations = grid_locations_UTM[pts[insample_loc_index], ], max_time_lag = time - 1, simulated = T)  
+  binned <- empirical_covariance_dataframe(data1_cov = conso_cor, simulated = T)
+  
+  theta_init <- c(3,4,281.6,705,1,1,0.838,0.545,0.0001,0.999)
+  w_init <- c(-2600000, -661200, 3604000, 1947000)
+  mod3 <- fit_model(init = theta_init, wind_init = w_init, mod = 3, weight = 3, empcov_spatial = binned[which(binned[,3]==0),], empcov_st = binned[which(binned[,3] > 0),], nug_eff = F, meters = T, num_iter = 10)
+  mod3_params[iter, ] <- mod3$parameters
+  
+}
 
 ############################################################################
 ###################           REAL DATA ANALYSIS         ###################

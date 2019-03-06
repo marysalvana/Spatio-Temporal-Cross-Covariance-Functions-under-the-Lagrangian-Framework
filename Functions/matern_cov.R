@@ -8,7 +8,7 @@ simulate_model <- function(mod, theta, wind, wind_var = NULL, maxtimelag, p = 2,
   }else if(mod == 2){
     cov.mod <- matern_cov(theta, wind, max_time_lag = maxtimelag, q = p, new_locations = locations)
   }else{
-    cov.mod <- matern_cov(theta, wind, max_time_lag = maxtimelag, q = p, new_locations = locations)
+    cov.mod <- lmc_cov(theta, wind, max_time_lag = maxtimelag, q = p, new_locations = locations)
   }
   return(cov.mod)
 }
@@ -189,21 +189,21 @@ lmc_cov <- function(theta, wind, max_time_lag, q, new_locations = locations, met
   
   nu <- theta[1:2]
   beta <- theta[3:4]
-  var <- c(1,1)
+  var <- theta[5:6]
   nug <- c(0,0)
   
   alpha <- matrix(c(theta[7], theta[8], theta[9], theta[10]), ncol=2, byrow=T)
   
-  if(meters == T){
-    w <- matrix(wind, ncol = 2, byrow = T)/1000
-    loc <- coords <- locations/1000
-  }else{
-    w <- matrix(wind, ncol = 2, byrow = T)
-    loc <- coords <- locations
-  }
-  
   S <- list()
   for(i in 1:q){
+    
+    if(meters == T){
+      w <- matrix(wind, ncol = 2, byrow = T)/1000
+      loc <- coords <- locations/1000
+    }else{
+      w <- matrix(wind, ncol = 2, byrow = T)
+      loc <- coords <- locations
+    }
     
     if (max_time_lag == 0){
       loc <- coords
