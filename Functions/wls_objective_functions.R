@@ -166,14 +166,16 @@ wls<-function(theta, emp_cov1, weights, nug_eff, step, est_param = NULL, meters,
       return(loss)
     }else{
       
-      Sigma <- matrix(c(theta[3], theta[4], theta[4], theta[5]), ncol=2)
+      Sigma <- matrix(c(theta[1], theta[2], theta[2], theta[3]), ncol=2)
       
       if(meters == T){
-        w <- theta[1:2]/1000
+        #w <- emp_cov1[which.max(emp_cov1[,4]),1:2]/1000
+        w <- theta[4:5]/1000
         hh <- emp_cov1[,1:2]%*%R/1000
-        hh2 <- cbind(hh[,1] - kappa[1], hh[,2] - kappa[2])/1000
+        hh2 <- cbind(hh[,1] - kappa[1], hh[,2] - kappa[2])
       }else{
-        w <- theta[1:2]
+        #w <- emp_cov1[which.max(emp_cov1[,4]),1:2]
+        w <- theta[4:5]
         hh <- emp_cov1[,1:2]%*%R
         hh2 <- cbind(hh[,1] - kappa[1], hh[,2] - kappa[2])
       }
@@ -187,7 +189,7 @@ wls<-function(theta, emp_cov1, weights, nug_eff, step, est_param = NULL, meters,
             y.fun  <- function(y) y^(nu[i])*exp(-y)*dmvn(X=hvec[1:2], mu=hvec[3]*w, sigma=(hvec[3]^2*Sigma + beta^2*2*y*diag(2)))
             sapply(c, y.fun)
           }
-          lai <- function(xxxx) integrate(Int.func, lower=0, upper=Inf, hvec=xxxx, abs.tol = 1e-18, rel.tol = 1e-18)$val
+          lai <- function(xxxx) integrate(Int.func, lower=0, upper=Inf, hvec=xxxx)$val
           
           theo <- apply(cbind(hh, 1), 1, lai)
           if(weight == 3){
@@ -198,21 +200,21 @@ wls<-function(theta, emp_cov1, weights, nug_eff, step, est_param = NULL, meters,
           loss <- loss + tloss
         }
         
-        for(i in 3:3){
+        #for(i in 3:3){
           
-          Int.func <- function(c, hvec){   
-            y.fun  <- function(y) y^(nu3)*exp(-y)*dmvn(X=hvec[1:2], mu=hvec[3]*w, sigma=(hvec[3]^2*Sigma + beta^2*2*y*diag(2)))
-            sapply(c, y.fun)
-          }
-          lai <- function(xxxx) integrate(Int.func, lower=0, upper=Inf, hvec=xxxx, abs.tol = 1e-18, rel.tol = 1e-18)$val
-          theo <- apply(cbind(hh2, 1), 1, lai)
-          if(weight == 3){
-            tloss <- sum(((emp_cov1[,i+3] - 4*pi*beta^2/gamma(nu3)*theo)/(1.001 - 4*pi*beta^2/gamma(nu3)*theo))^2)
-          }else{
-            tloss <- sum(((emp_cov1[,i+3] - 4*pi*beta^2/gamma(nu3)*theo))^2)
-          }
-          loss <- loss + tloss
-        }
+        #  Int.func <- function(c, hvec){   
+        #    y.fun  <- function(y) y^(nu3)*exp(-y)*dmvn(X=hvec[1:2], mu=hvec[3]*w, sigma=(hvec[3]^2*Sigma + beta^2*2*y*diag(2)))
+        #    sapply(c, y.fun)
+        #  }
+        #  lai <- function(xxxx) integrate(Int.func, lower=0, upper=Inf, hvec=xxxx)$val
+        #  theo <- apply(cbind(hh2, 1), 1, lai)
+        #  if(weight == 3){
+        #    tloss <- sum(((emp_cov1[,i+3] - 4*pi*beta^2/gamma(nu3)*theo)/(1.001 - 4*pi*beta^2/gamma(nu3)*theo))^2)
+        #  }else{
+        #    tloss <- sum(((emp_cov1[,i+3] - 4*pi*beta^2/gamma(nu3)*theo))^2)
+        #  }
+        #  loss <- loss + tloss
+        #}
         return(loss)
       }
     }

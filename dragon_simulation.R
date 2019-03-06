@@ -36,8 +36,8 @@ set.seed(12345678) #12, 1234, 112
 conso_matern_params <- list()
 conso_nonstationary_params <- list()
 
-for(simulation in 1:100){
-  A <- mvrnorm(1000, rep(0,dim(materncov)[1]),materncov)
+for(simulation in 1:1){
+  A <- mvrnorm(1, rep(0,dim(materncov)[1]),materncov)
   
   N.mc <- 4
   fit.radius <- 0.25 #0.15 works
@@ -106,7 +106,7 @@ for(simulation in 1:100){
   
   # Storage for the mixture component kernels
   #mc.kernels <- array(NA, dim=c(2, 2, K))
-  MLEs.save <- matrix(NA, K, 14)
+  MLEs.save <- matrix(NA, K, 12)
   coords_mc_dist <- StatMatch::mahalanobis.dist(data.x = coords, data.y = mc.locations, vc = diag(2))
   
   #data <- matrix(A, nrow=2*N)
@@ -129,10 +129,10 @@ for(simulation in 1:100){
     
     #####################################################
     # Local estimation
-    f_loglik <- make_local_lik(locations = temp.locations, Xmat = Xtemp, data = temp.data, fixed = rep(FALSE, 14), time=t)
+    f_loglik <- make_local_lik(locations = temp.locations, Xmat = Xtemp, data = temp.data, fixed = rep(FALSE, 12), time=t)
     
-    MLEs <- optim( par = c(lam1.init, lam2.init, pi/4,lam1.init, lam2.init, pi/4,thets,1,1,1,1),
-                   fn = f_loglik, control=list(maxit=20000,parscale=c(lam1.init, lam2.init, pi/4,lam1.init, lam2.init, pi/4, thets,1,1,1,1),trace=5))
+    MLEs <- optim( par = c(lam1.init, lam2.init, pi/4,lam1.init, lam2.init, pi/4,thets,1,1),
+                   fn = f_loglik, control=list(maxit=20000,parscale=c(lam1.init, lam2.init, pi/4,lam1.init, lam2.init, pi/4, thets,1,1),trace=5))
     
     MLEs.save[k,] <- MLEs$par
     
@@ -149,11 +149,11 @@ for(simulation in 1:100){
   beta0_phi.2 <- MLEs.save[,6]
   
   #h <- rslt$lambda.w
-  p1 <- matrix(0,N.mc,14)
+  p1 <- matrix(0,N.mc,12)
   for (i in 1:N.mc) {
     p1[i,] <- c(log(beta0_lam1.1[i]),log(beta0_lam1.2[i]),log(beta0_phi.1[i]/(pi/2 - beta0_phi.1[i])),
                 log(beta0_lam2.1[i]),log(beta0_lam2.2[i]),log(beta0_phi.2[i]/(pi/2 - beta0_phi.1[i])),
-                colMeans(MLEs.save[,7:12]),MLEs.save[i,13:14])
+                colMeans(MLEs.save[,7:12]))
   }
   
   nk <- N.mc
@@ -165,18 +165,16 @@ for(simulation in 1:100){
     local.index[(1 + (j - 1) * NKR):(j * NKR)] <- (1 + (j - 1) * Nk * NKR):(((j - 1) * Nk * NKR) + NKR)
   }
   LL.est <- matrix(0,nk,12)
-  for(l in 1 : Nk){
-    for (k in 1 : Nk) {
+  for(l in 1 : 2){
+    for (k in 1 : 2) {
       cat(l,k,'\n')
       index <- (k-1)*NKR+ local.index + Nk*nkr*(l-1)
       locations <- coords
       temp.locations<- locations[index,]
       
       if(!is.matrix(A)){
-        temp.data <- A[rep(index,2*t)]
         temp.data <- A[c(index,index + 400)]
       }else{
-        temp.data <- A[,rep(index,2*t)]
         temp.data <- A[,c(index,index + 400)]
       }
       
@@ -190,8 +188,16 @@ for(simulation in 1:100){
       #test_theta <- rep(c(-20.4240956,0.4565653,12.6135517,0.4972399,4.6949158,2.3519542),2)
       #test_theta <- rep(0,12)
       
-      test_theta <- c(-1.50380504,  -0.07558557,   4.82244196,  -5.66094136,   2.99578278,  43.99618927,
-                      19.24018098, -14.63719610,  -0.51861398,  15.23767899,   2.68615214,  -3.00711322)
+      #test_theta <- c(-1.50380504,  -0.07558557,   4.82244196,  -5.66094136,   2.99578278,  43.99618927,
+      #                19.24018098, -14.63719610,  -0.51861398,  15.23767899,   2.68615214,  -3.00711322)
+      #test_theta <- c(-1.505190,   1.099794,   8.066450, -10.759477,  -1.664848,  56.165726,   4.911672,
+      #                -5.670777,   3.312877,   5.553745,   2.910514,  -7.774712)
+      test_theta <- rep(-3.5,12)
+      #test_theta <- c(-3.0754288, -2.5015024, -0.1342696, -1.7328716, -2.3925043, -0.1519728,  0.4675513,
+      #                1.1601042,  2.9922622,  0.4461393,  1.0006820,  0.9999106)
+      #test_theta <- c(-6.3557452,5.9176493,2.7465681,-0.1075091, -13.4716210,  -1.8817176,
+      #                -1.2287751, -11.2160203,   1.5782560, -11.2405930,  16.7594548,   6.4800893)
+      #test_theta <- LL.est_old[l+(k-1)*Nk,]
       MLEs.local <- optim(test_theta, make.local.loglik,control=list(maxit=20000, parscale=test_theta, trace=5))
       #test_theta <- MLEs.local$par
       #MLEs.local <- optim(test_theta, make.local.loglik,control=list(maxit=10000, parscale=test_theta, trace=5))
@@ -201,10 +207,67 @@ for(simulation in 1:100){
   conso_matern_params[[simulation]] <- p1
   conso_nonstationary_params[[simulation]] <- LL.est
 }
-save(conso_matern_params,conso_nonstationary_params, file="/scratch/dragon/intel/salvanmo/Results/nonstationary2.Rdata")
+#save(conso_matern_params,conso_nonstationary_params, file="/scratch/dragon/intel/salvanmo/Results/nonstationary2.Rdata")
 
 #  -1.50380504  -0.07558557   4.82244196  -5.66094136   2.99578278  43.99618927
 #  19.24018098 -14.63719610  -0.51861398  15.23767899   2.68615214  -3.00711322
 
 #  -1.505190   1.099794   8.066450 -10.759477  -1.664848  56.165726   4.911672
 #  -5.670777   3.312877   5.553745   2.910514  -7.774712
+
+#EST PARAMETERS
+LL.est_old[2,] <- c(4.1537108,  0.0981375, -0.7889923,  0.6965698,  2.1786728,  0.7134888, -0.9083745,
+                    -2.5646523,  5.7758953, -1.8379367, -2.3627816, -4.5149293)
+
+#####################################################################
+LL.est <- LL.est_old
+p <- conso_matern_params[[1]][,1:12]
+
+#LL.est <- cbind(-conso_nonstationary_params[[1]][,1],
+#                conso_nonstationary_params[[1]][,-1])
+  
+h <- 0.25
+
+lam1.est <- lam2.est <- phi.est <- matrix(0,N,N)
+lam1.est.ll <- lam2.est.ll <- phi.est.ll <- matrix(0,N,N)
+weights <-  array(0,c(N,N,N.mc))
+for(i in (1 : N)){
+  for(j in (1 : N)){
+    x1 <- i/N
+    x2 <- j/N
+    for(k in 1:N.mc) {
+      weights[i,j,k] <- exp(-sum((c(x1,x2) - mc.locations[k,])^2)/2/h)
+    }
+    weights[i,j,] <- weights[i,j,]/sum(weights[i,j,])
+    ##WS0 estimators
+    lam1.est[i,j] <- sum(weights[i,j,] * p[,1])
+    lam2.est[i,j] <- sum(weights[i,j,] * p[,2])
+    phi.est[i,j] <- sum(weights[i,j,] * p[,3])
+    ##NS1 estimators
+    lam1.est.ll[i,j] <- sum(weights[i,j,] * (p[, 1] + 
+                                               LL.est[, 1] * (x1 - mc.locations[,1]) +
+                                               LL.est[, 2] * (x2 - mc.locations[,2])))
+    lam2.est.ll[i,j] <- sum(weights[i,j,] * (p[,2] + 
+                                               LL.est[, 3] * (x1 - mc.locations[,1]) + 
+                                               LL.est[, 4] * (x2 - mc.locations[,2])))
+    phi.est.ll[i,j] <- sum(weights[i,j,] * (p[,3] + 
+                                              LL.est[,5] * (x1 - mc.locations[,1]) +
+                                              LL.est[,6]*(x2-mc.locations[,2])))
+  }
+}
+
+par(mfrow = c(3,3))
+
+image.plot(exp(lam1.est),xlab = 'x coordinate',ylab = 'y coordiate',
+           main = expression('local stationary estimation of'~ lambda~'_1'))
+image.plot(exp(lam2.est),xlab = 'x coordinate',ylab = 'y coordiate',
+           main = expression('local stationary estimation of'~ lambda~'_2'))
+image.plot(pi/2 * exp(phi.est)/(1 + exp(phi.est)),xlab='x coordiate',ylab='y coordiate',
+           main = expression('local stationary estimation of'~ ~ phi))
+
+image.plot(exp(lam1.est.ll),xlab = 'x coordinate',ylab = 'y coordiate',
+           main = expression('local stationary estimation of'~ lambda~'_1'))
+image.plot(exp(lam2.est.ll),xlab = 'x coordinate',ylab = 'y coordiate',
+           main = expression('local stationary estimation of'~ lambda~'_2'))
+image.plot(pi/2 * exp(phi.est.ll)/(1 + exp(phi.est)),xlab='x coordiate',ylab='y coordiate',
+           main = expression('local stationary estimation of'~ ~ phi))

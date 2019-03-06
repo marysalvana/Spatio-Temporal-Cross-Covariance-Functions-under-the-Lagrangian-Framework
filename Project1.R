@@ -53,8 +53,9 @@ for(iter in 1:1){
   binned <- empirical_covariance_dataframe(data1_cov = conso_cor, simulated = T)
   
   theta_init <- c(3.218, 3.736, 794.8, 1, 1, 0.5) #change this values to empirical
-  w_init <- c(-497426.7319, -39634.6099, 100, 0.00009, 100)
-  mod1 <- fit_model(init = theta_init, wind_init = w_init, mod = 1, weight = 3, empcov_spatial = binned[which(binned[,3]==0),], empcov_st = binned[which(binned[,3] > 0),], nug_eff = F, meters = T, num_iter = 0)
+  emp_vel <- which.max(binned[which(binned[,3] == 1),4])
+  w_init <- c(100, 0.00009, 100, binned[which(binned[,3] == 1)[emp_vel],])
+  mod1 <- fit_model(init = theta_init, wind_init = w_init, mod = 1, weight = 3, empcov_spatial = binned[which(binned[,3]==0),], empcov_st = binned[which(binned[,3] == 1),], nug_eff = F, meters = T, num_iter = 0)
   mod1_params[iter, ] <- mod1$parameters
   
 }
