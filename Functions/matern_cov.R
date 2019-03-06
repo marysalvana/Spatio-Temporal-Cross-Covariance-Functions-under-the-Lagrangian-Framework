@@ -5,6 +5,8 @@
 simulate_model <- function(mod, theta, wind, wind_var = NULL, maxtimelag, p = 2, locations, meters = T){
   if(mod == 1){
     cov.mod <- matern_random_cov(theta, wind, wind_var, max_time_lag = maxtimelag, q = p, new_locations = locations)
+  }else if(mod == 2){
+    cov.mod <- matern_cov(theta, wind, max_time_lag = maxtimelag, q = p, new_locations = locations)
   }else{
     cov.mod <- matern_cov(theta, wind, max_time_lag = maxtimelag, q = p, new_locations = locations)
   }
@@ -92,7 +94,7 @@ matern_cov <- function(theta, wind, max_time_lag, q, new_locations = locations, 
   return(S1)
 }
 
-matern_random_cov <-function(theta, wind, wind_var, max_time_lag, q, new_locations, meters = T){
+matern_random_cov <- function(theta, wind, wind_var, max_time_lag, q, new_locations, meters = T){
   
   Sigma <- wind_var
   
@@ -183,6 +185,93 @@ matern_random_cov <-function(theta, wind, wind_var, max_time_lag, q, new_locatio
   return(S)
 }
 
+lmc_cov <- function(theta, wind, max_time_lag, q, new_locations = locations, meters = T){
+  
+  nu <- theta[1:2]
+  beta <- theta[3:4]
+  var <- c(1,1)
+  nug <- c(0,0)
+  
+  alpha <- matrix(c(theta[7], theta[8], theta[9], theta[10]), ncol=2, byrow=T)
+  
+  if(meters == T){
+    w <- matrix(wind, ncol = 2, byrow = T)/1000
+    loc <- coords <- locations/1000
+  }else{
+    w <- matrix(wind, ncol = 2, byrow = T)
+    loc <- coords <- locations
+  }
+  
+  S <- list()
+  for(i in 1:q){
+    
+    if (max_time_lag == 0){
+      loc <- coords
+    } else {
+      for (tt in 1:max_time_lag){
+        temploc <- matrix(, ncol=2, nrow=nrow(coords))
+        for(rr in 1:nrow(coords)){
+          temploc[rr,] <- c(coords[rr,1] - tt*w[i,1], coords[rr,2] - tt*w[i,2])
+        }
+        loc <- rbind(loc, temploc)
+      }
+    }
+    dist0 <- spDists(loc, longlat = F)
+  
+    SS <- ifelse(dist0 != 0, var[i]*(dist0/beta[i])^nu[i] * besselK(dist0/beta[i], nu[i])/(2^(nu[i] - 1)*gamma(nu[i])), var[i] + nug[i])
+    
+    S[[i]] <- SS
+  }
+  S1 <- rbind(cbind(alpha[1,1]^2*S[[1]] + alpha[1,2]^2*S[[2]], alpha[1,1]*alpha[2,1]*S[[1]] + alpha[1,2]*alpha[2,2]*S[[2]]),
+              cbind(alpha[1,1]*alpha[2,1]*S[[1]] + alpha[1,2]*alpha[2,2]*S[[2]], alpha[2,1]^2*S[[1]] + alpha[2,2]^2*S[[2]]))
+  
+  return(S1)
+}
+
+lmc_random_cov <- function(theta, wind, wind_var, max_time_lag, q, new_locations, meters = T){
+  
+  nu <- theta[1:2]
+  beta <- theta[3:4]
+  var <- c(1,1)
+  nug <- c(0,0)
+  
+  alpha <- matrix(c(theta[5], theta[6], theta[7], theta[8]), ncol = 2, byrow = T)
+  
+  if(meters == T){
+    w <- matrix(wind, ncol = 2, byrow = T)/1000
+    loc <- coords <- locations/1000
+  }else{
+    w <- matrix(wind, ncol = 2, byrow = T)
+    loc <- coords <- locations
+  }
+  
+  sigma <- wind_var
+  
+  S <- list()
+  temploc <- list()
+  
+  for(i in 1:q){
+    
+    temploc[[1]] <- loc <- spDists(coords, longlat = F)
+    
+    if (max_time_lag == 0){
+      loc <- spDists(coords, longlat = F)
+    } else {
+      for (tt in 1:max_time_lag){
+        temploc[[tt + 1]] <- sqrt((coords - tt*w[i,])%*%solve(diag(2) + sigma[[i]])%*%t(coords - tt*w[i,]))
+      }
+    }
+    dist0 <- toeplitz_mat(temploc)
+    
+    SS <- ifelse(dist0 != 0, var[i]*(dist0/beta[i])^nu[i] * besselK(dist0/beta[i], nu[i])/(2^(nu[i]-1)*gamma(nu[i])), var[i] + nug[i])
+    
+    S[[i]] <- SS
+  }
+  S1 <- rbind(cbind(alpha[1,1]^2*S[[1]] + alpha[1,2]^2*S[[2]], alpha[1,1]*alpha[2,1]*S[[1]] + alpha[1,2]*alpha[2,2]*S[[2]]),
+              cbind(alpha[1,1]*alpha[2,1]*S[[1]] + alpha[1,2]*alpha[2,2]*S[[2]], alpha[2,1]^2*S[[1]] + alpha[2,2]^2*S[[2]]))
+  
+  return(S1)
+}
 #---------NONSTATIONARY---------#
 
 matern_cov_regular_grid <-function(theta,wind,time){

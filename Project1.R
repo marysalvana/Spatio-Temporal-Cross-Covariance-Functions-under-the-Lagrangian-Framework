@@ -39,13 +39,33 @@ for(aa in 1:length(outsample_loc_index)){
 kappa <- matrix(c(0, 0, 0, 0), ncol=2, byrow=T)
 thets <- c(3.218, 3.736, 794.8, 0.59, 1, 1, 0, 0) #set parameters to empirical estimates of real dataset
 
-m2_cov <- simulate_model(mod = 2, theta = thets, wind = c(-497426.7319, -39634.6099), maxtimelag = 1, p = 2, locations = grid_locations_UTM[pts,], meters = T)
+#simulation_study(true_param =)
+sim.cov <- simulate_model(mod = 1, theta = thets, wind = c(-497426.7319, -39634.6099), wind_var = matrix(c(100,0.00009,0.00009,100),ncol=2), maxtimelag = 1, p = 2, locations = grid_locations_UTM[pts,], meters = T)
+
+mod1_params <- matrix(, ncol=11, nrow=100)
+
+for(iter in 1:1){
+  
+  A <- mvrnorm(n = 1000, mu = rep(0, dim(sim.cov)[1]), Sigma = sim.cov)
+  A1 <- A[, -to_remove]
+  
+  conso_cor <- empirical_st_cov(data1 = A1, locations = grid_locations_UTM[pts[insample_loc_index], ], max_time_lag = time - 1, simulated = T)  
+  binned <- empirical_covariance_dataframe(data1_cov = conso_cor, simulated = T)
+  
+  theta_init <- c(3.218, 3.736, 794.8, 1, 1, 0.5) #change this values to empirical
+  w_init <- c(-497426.7319, -39634.6099, 100, 0.00009, 100)
+  mod1 <- fit_model(init = theta_init, wind_init = w_init, mod = 1, weight = 3, empcov_spatial = binned[which(binned[,3]==0),], empcov_st = binned[which(binned[,3] > 0),], nug_eff = F, meters = T, num_iter = 0)
+  mod1_params[iter, ] <- mod1$parameters
+  
+}
+
+sim.cov <- simulate_model(mod = 2, theta = thets, wind = c(-497426.7319, -39634.6099), maxtimelag = 1, p = 2, locations = grid_locations_UTM[pts,], meters = T)
 
 mod2_params <- matrix(, ncol=8, nrow=100)
 
 for(iter in 1:100){
   
-  A <- mvrnorm(n = 1000, mu = rep(0, dim(m2_cov)[1]), Sigma = m2_cov)
+  A <- mvrnorm(n = 1000, mu = rep(0, dim(sim.cov)[1]), Sigma = sim.cov)
   A1 <- A[, -to_remove]
   
   conso_cor <- empirical_st_cov(data1 = A1, locations = grid_locations_UTM[pts[insample_loc_index], ], max_time_lag = time - 1, simulated = T)  
@@ -64,33 +84,7 @@ for(iter in 1:100){
   w_init <- c(-500400, -59740)
   mod2 <- fit_model(init = theta_init, wind_init = w_init, mod = 2, weight = 3, empcov_spatial = binned[which(binned[,3]==0),], empcov_st = binned[which(binned[,3] > 0),], nug_eff = F, meters = T, num_iter = 10)
   mod2_params[iter, ] <- mod2$parameters
-}
-
-m1_cov <- simulate_model(mod = 1, theta = thets, wind = c(-497426.7319, -39634.6099), wind_var = matrix(c(100,0.00009,0.00009,100),ncol=2), maxtimelag = 1, p = 2, locations = grid_locations_UTM[pts,], meters = T)
-
-mod1_params <- matrix(, ncol=8, nrow=100)
-
-for(iter in 1:1){
   
-  A <- mvrnorm(n = 1000, mu = rep(0, dim(m1_cov)[1]), Sigma = m1_cov)
-  A1 <- A[, -to_remove]
-  
-  conso_cor <- empirical_st_cov(data1 = A1, locations = grid_locations_UTM[pts[insample_loc_index], ], max_time_lag = time - 1, simulated = T)  
-  binned <- empirical_covariance_dataframe(data1_cov = conso_cor, simulated = T)
-  
-  #if(iter == 1){
-  #  hlag <- sqrt(binned[which(binned[,3]==0), 1]^2 + binned[which(binned[,3]==0), 2]^2)
-  #display plots
-  #  par(mfrow = c(1,3))
-  #  plot(hlag/1000, binned[which(binned[,3]==0), 4], pch=3, ylab='', col=1,xlab='Spatial Lag (km)', main='', col.main= "#4EC1DE", ylim=c(0,1))
-  #  plot(hlag/1000, binned[which(binned[,3]==0), 5], pch=3, ylab='', col=1,xlab='Spatial Lag (km)', main='', col.main= "#4EC1DE", ylim=c(0,1))
-  #  plot(hlag/1000, binned[which(binned[,3]==0), 6], pch=3, ylab='', col=1,xlab='Spatial Lag (km)', main='', col.main= "#4EC1DE", ylim=c(0,1))
-  #}
-  
-  theta_init <- c(3.218, 3.736, 794.8, 1, 1, 0.5) #change this values to empirical
-  w_init <- c(-500400, -59740, 100,0.00009,100)
-  mod1 <- fit_model(init = theta_init, wind_init = w_init, mod = 1, weight = 3, empcov_spatial = binned[which(binned[,3]==0),], empcov_st = binned[which(binned[,3] > 0),], nug_eff = F, meters = T, num_iter = 0)
-  mod1_params[iter, ] <- mod2$parameters
 }
 
 
