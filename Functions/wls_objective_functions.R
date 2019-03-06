@@ -240,7 +240,7 @@ wls <- function(theta, emp_cov1, weights, nug_eff, step, est_param = NULL, meter
       beta <- theta[3:4]
       var <- theta[5:6]
      
-      if( theta[1] < 0.0001 | theta[2] < 0.0001 | theta[3] < 0.0001 | theta[4] < 0.0001 | theta[5] < 0 | theta[5] > 1   | theta[6] < 0 | theta[6] > 1 | 
+      if( theta[1] < 0.0001 | theta[2] < 0.0001 | theta[3] < 0.0001 | theta[4] < 0.0001 | theta[5] < 0 | theta[6] < 0 |
           theta[7]< 0 |  theta[7] > 1 | theta[8] < 0 | theta[8] > 1 | theta[9] < 0 |  theta[9] > 1 | theta[10] < 0 | theta[10] > 1){
         return(Inf)
       }else{
