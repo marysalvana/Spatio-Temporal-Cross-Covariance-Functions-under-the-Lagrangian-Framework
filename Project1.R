@@ -13,7 +13,6 @@ source(file=paste(root,"Functions/data_format.R",sep=''))
 source(file=paste(root,"Functions/matern_cov.R",sep=''))
 source(file=paste(root,"Functions/toeplitz_mat.R",sep=''))
 
-
 setwd(paste(root,'Figures',sep=''))
 
 load(paste(root,'Data/UTM_simulated_locations_only.RData',sep=''))
@@ -39,7 +38,7 @@ for(aa in 1:length(outsample_loc_index)){
 kappa <- matrix(c(0, 0, 0, 0), ncol=2, byrow=T)
 thets <- c(3.218, 3.736, 794.8, 0.59, 1, 1, 0, 0) #set parameters to empirical estimates of real dataset
 
-#simulation_study(true_param =)
+#simulation_study(true_param = )
 sim.cov <- simulate_model(mod = 1, theta = thets, wind = c(-497426.7319, -39634.6099), wind_var = matrix(c(100,0.00009,0.00009,100),ncol=2), maxtimelag = 1, p = 2, locations = grid_locations_UTM[pts,], meters = T)
 
 mod1_params <- matrix(, ncol=11, nrow=100)
@@ -54,7 +53,8 @@ for(iter in 1:1){
   
   theta_init <- c(3.218, 3.736, 794.8, 1, 1, 0.5) #change this values to empirical
   emp_vel <- which.max(binned[which(binned[,3] == 1),4])
-  w_init <- c(100, 0.00009, 100, binned[which(binned[,3] == 1)[emp_vel],])
+  #emp_vel_cross <- which.max(binned[which(binned[,3] == 1),6])
+  w_init <- c(100, 0.00009, 100, binned[which(binned[,3] == 1)[emp_vel], 1:2])
   mod1 <- fit_model(init = theta_init, wind_init = w_init, mod = 1, weight = 3, empcov_spatial = binned[which(binned[,3]==0),], empcov_st = binned[which(binned[,3] == 1),], nug_eff = F, meters = T, num_iter = 0)
   mod1_params[iter, ] <- mod1$parameters
   
@@ -95,7 +95,6 @@ sim.cov <- simulate_model(mod = 3, theta = thets, wind = c(-2600000, -661200, 36
 mod3_params <- matrix(, ncol=14, nrow=100)
 
 for(iter in 1:1){
-  
   A <- mvrnorm(n = 1000, mu = rep(0, dim(sim.cov)[1]), Sigma = sim.cov)
   A1 <- A[, -to_remove]
   
