@@ -1,5 +1,5 @@
 fit_model <- function(init = NULL, wind_init, mod, randvel, weight, empcov_spatial = NULL, empcov_st, nug_eff = F, meters = T, num_iter, 
-                      est_param.temp = NULL, est_param.fn.val = NULL, aniso = F, rotation_matrix = NULL){
+                      est_param.temp = NULL, aniso = F, rotation_matrix = NULL){
   
   # num_iter : number of loops to run optim
   
@@ -12,7 +12,7 @@ fit_model <- function(init = NULL, wind_init, mod, randvel, weight, empcov_spati
         
         fit3.mod <- optim(par = wind_init, wls, emp_cov1 = empcov_st, nug_eff = F, meters = T, weights = weight, step = 3, est_param = c(fit1.mod$par, fit2.mod$par), aniso = F, rand.vel = T, model = mod, control = list(maxit = 10000, parscale = wind_init, trace = 5))
         
-        lst <- list(parameters = c(est_param.temp, fit3.mod$par), fn_value = est_param.fn.val + fit3.mod$value)
+        lst <- list(parameters = c(est_param.temp, fit3.mod$par), fn_value = fit1.mod$value + fit2.mod$value + fit3.mod$value)
         
         return(lst)
       }else if(randvel == F){
@@ -34,7 +34,7 @@ fit_model <- function(init = NULL, wind_init, mod, randvel, weight, empcov_spati
     }else if(mod == 'gneitingmatern'){
       fit3.mod <- optim(par = gneitingmatern_init, wls, emp_cov1 = empcov_st, nug_eff = F, meters = T, weights = weight, step = 3, est_param = c(fit1.mod$par, fit2.mod$par), aniso = F, model = mod, control = list(maxit = 10000, parscale = gneitingmatern_init, trace = 5))
       
-      lst <- list(parameters = c(est_param.temp, fit3.mod$par), fn_value = est_param.fn.val + fit3.mod$value)
+      lst <- list(parameters = c(est_param.temp, fit3.mod$par), fn_value = fit1.mod$value + fit2.mod$value + fit3.mod$value)
       
       return(lst)
     }
