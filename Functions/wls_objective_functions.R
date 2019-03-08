@@ -1,20 +1,20 @@
-fit_model <- function(init = NULL, wind_init, mod, weight, empcov_spatial = NULL, empcov_st, nug_eff = F, meters = T, num_iter, 
+fit_model <- function(init = NULL, wind_init, mod, randvel, weight, empcov_spatial = NULL, empcov_st, nug_eff = F, meters = T, num_iter, 
                       est_param.temp = NULL, est_param.fn.val = NULL, aniso = F, rotation_matrix = NULL){
   
   # num_iter : number of loops to run optim
   
-  if(mod == 1 | mod ==2){
+  if(mod == 'matern'){
     fit1.mod <- optim(par = init[-length(init)], wls, emp_cov1 = empcov_spatial, nug_eff = F, meters = T, weights = weight, step = 1, aniso = F, model = 'matern', control=list(maxit = 10000, parscale = init[-length(init)], trace = 5))
     fit2.mod <- optim(par = init[length(init)], wls, emp_cov1 = empcov_spatial, nug_eff = F, meters = T, weights = weight, step = 2, est_param = fit1.mod$par, aniso = F, model = 'matern', method='SANN', control = list(maxit = 3000, parscale = init[length(init)], trace = 5))
     
-    if(mod == 1){
+    if(randvel == T){
       
       fit3.mod <- optim(par = wind_init, wls, emp_cov1 = empcov_st, nug_eff = F, meters = T, weights = weight, step = 3, est_param = c(fit1.mod$par, fit2.mod$par), aniso = F, rand.vel = T, model = 'matern', control = list(maxit = 10000, parscale = wind_init, trace = 5))
       
       lst <- list(parameters = c(est_param.temp, fit3.mod$par), fn_value = est_param.fn.val + fit3.mod$value)
       
       return(lst)
-    }else if(mod == 2){
+    }else if(randvel == F){
       
       fit3.mod <- optim(par = wind_init, wls, emp_cov1 = empcov_st, nug_eff = F, meters = T, weights = weight, step = 3, est_param = c(fit1.mod$par, fit2.mod$par), aniso = F, rand.vel = F, model = 'matern', control = list(maxit = 10000, parscale = wind_init, trace = 5))
       
@@ -30,13 +30,22 @@ fit_model <- function(init = NULL, wind_init, mod, weight, empcov_spatial = NULL
       return(lst)
       
     }
-  }else{
-    fit1.mod <- optim(par = init, wls, emp_cov1 = empcov_spatial, nug_eff = F, meters = T, weights = weight, step = 1, aniso = F, model = 'lmc', control=list(maxit = 10000, parscale = init, trace = 5))
-    fit2.mod <- optim(par = wind_init, wls, emp_cov1 = empcov_st, nug_eff = F, meters = T, weights = weight, step = 2, est_param = fit1.mod$par, aniso = F, rand.vel = F, model = 'lmc', control = list(maxit = 10000,parscale = wind_init, trace = 5))
-    
-    lst <- list(parameters = c(fit1.mod$par, fit2.mod$par), fn_value = fit1.mod$value + fit2.mod$value)
-    
-    return(lst)
+  }else if(mod == 'lmc'){
+    if(randvel == T){
+      fit1.mod <- optim(par = init, wls, emp_cov1 = empcov_spatial, nug_eff = F, meters = T, weights = weight, step = 1, aniso = F, model = mod, control=list(maxit = 10000, parscale = init, trace = 5))
+      fit2.mod <- optim(par = wind_init, wls, emp_cov1 = empcov_st, nug_eff = F, meters = T, weights = weight, step = 2, est_param = fit1.mod$par, aniso = F, rand.vel = randvel, model = mod, control = list(maxit = 10000,parscale = wind_init, trace = 5))
+      
+      lst <- list(parameters = c(fit1.mod$par, fit2.mod$par), fn_value = fit1.mod$value + fit2.mod$value)
+      
+      return(lst)
+    }else if(randvel == F){
+      fit1.mod <- optim(par = init, wls, emp_cov1 = empcov_spatial, nug_eff = F, meters = T, weights = weight, step = 1, aniso = F, model = mod, control=list(maxit = 10000, parscale = init, trace = 5))
+      fit2.mod <- optim(par = wind_init, wls, emp_cov1 = empcov_st, nug_eff = F, meters = T, weights = weight, step = 2, est_param = fit1.mod$par, aniso = F, rand.vel = randvel, model = mod, control = list(maxit = 10000,parscale = wind_init, trace = 5))
+      
+      lst <- list(parameters = c(fit1.mod$par, fit2.mod$par), fn_value = fit1.mod$value + fit2.mod$value)
+      
+      return(lst)
+    }
   }
 }
 
@@ -288,23 +297,42 @@ wls <- function(theta, emp_cov1, weights, nug_eff, step, est_param = NULL, meter
       beta <- est_param[3:4]
       var <- est_param[5:6]
       
-      loss<- 0
+      loss <- 0
       
-      alpha<-  matrix(est_param[7:10], ncol=2, byrow=T)
+      alpha <-  matrix(est_param[7:10], ncol=2, byrow=T)
       
       w <- matrix(theta[1:4], ncol=2, byrow=T)
       
-      theo_list <- list()
-      
-      for(i in 1:2){
+      if(!rand.vel == T){
+        theo_list <- list()
         
-        if(meters == T){
-          h <- sqrt((emp_cov1[,1] - emp_cov1[,3]*w[i,1])^2 + (emp_cov1[,2] - emp_cov1[,3]*w[i,2])^2)/1000
-        }else{
-          h <- sqrt((emp_cov1[,1] - emp_cov1[,3]*w[i,1])^2 + (emp_cov1[,2] - emp_cov1[,3]*w[i,2])^2)
+        for(i in 1:2){
+          
+          if(meters == T){
+            h <- sqrt((emp_cov1[,1] - emp_cov1[,3]*w[i,1])^2 + (emp_cov1[,2] - emp_cov1[,3]*w[i,2])^2)/1000
+          }else{
+            h <- sqrt((emp_cov1[,1] - emp_cov1[,3]*w[i,1])^2 + (emp_cov1[,2] - emp_cov1[,3]*w[i,2])^2)
+          }
+          theo_list_temp <- ifelse(h != 0, var[i]*(h/beta[i])^nu[i]*besselK(h/beta[i], nu[i])/(2^(nu[i]-1)*gamma(nu[i])), var[i] + nug[i])
+          theo_list[[i]] <- theo_list_temp
         }
-        theo_list_temp <- ifelse(h != 0, var[i]*(h/beta[i])^nu[i]*besselK(h/beta[i], nu[i])/(2^(nu[i]-1)*gamma(nu[i])), var[i] + nug[i])
-        theo_list[[i]] <- theo_list_temp
+      }else{
+        sigma <- list()
+        sigma[[1]] <- matrix(c(theta[5],theta[6],theta[6],theta[7]),ncol=2,byrow=T)
+        sigma[[2]] <- matrix(c(theta[8],theta[9],theta[9],theta[10]),ncol=2,byrow=T)
+        
+        theo_list <- list()
+        
+        for(i in 1:2){
+          
+          if(meters == T){
+            h <- sqrt(diag((emp_cov1[,1:2] - w[i,])%*%solve(diag(2) + sigma[[i]])%*%t(emp_cov1[,1:2] - w[i,])))/1000
+          }else{
+            h <- sqrt(diag((emp_cov1[,1:2] - w[i,])%*%solve(diag(2) + sigma[[i]])%*%t(emp_cov1[,1:2] - w[i,])))
+          }
+          theo_list_temp <- ifelse(h != 0, var[i]*(h/beta[i])^nu[i]*besselK(h/beta[i], nu[i])/(2^(nu[i]-1)*gamma(nu[i])), var[i] + nug[i])
+          theo_list[[i]] <- theo_list_temp/sqrt(det(diag(2) + sigma[[i]]))
+        }
       }
       
       for(j in 1:2){
@@ -330,6 +358,7 @@ wls <- function(theta, emp_cov1, weights, nug_eff, step, est_param = NULL, meter
       loss <- loss+tloss
       
       return(loss)
+      
     }
   }
 }

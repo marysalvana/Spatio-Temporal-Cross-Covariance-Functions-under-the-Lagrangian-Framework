@@ -2,16 +2,18 @@
 
 #---------STATIONARY------------#
 
-simulation_study <- function(true_param_spatial, true_param_velocity, sim_model, num_sim, max_u, num_variables, location, plot = T, nugget = F){
+simulation_study <- function(true_param_spatial, true_param_velocity, sim_model, rand_vel, num_sim, max_u, num_variables, location, plot = T, nugget = F){
   
   mod_params <- matrix(, ncol = length(true_param_spatial) + length(true_param_velocity), nrow = num_sim)
   
-  if(sim_model == 1){
-    sim.cov <- simulate_model(mod = sim_model, theta = true_param_spatial, wind = true_param_velocity[1:2], wind_var = matrix(c(true_param_velocity[3:4], true_param_velocity[4:5]), ncol=2), maxtimelag = max_u, p = num_variables, locations = location, meters = T, nugeff = nugget)
-  }else if(sim_model == 2){
-    sim.cov <- simulate_model(mod = sim_model, theta = true_param_spatial, wind = true_param_velocity, maxtimelag = max_u, p = num_variables, locations = location, meters = T, nugeff = nugget)
-  }else{
-    sim.cov <- simulate_model(mod = sim_model, theta = true_param_spatial, wind = true_param_velocity, maxtimelag = max_u, p = num_variables, locations = location, meters = T, nugeff = nugget)
+  if(sim_model == 'matern' & rand_vel == T){
+    sim.cov <- simulate_model(mod = sim_model, randvel = rand_vel, theta = true_param_spatial, wind = true_param_velocity[1:2], wind_var = matrix(c(true_param_velocity[3:4], true_param_velocity[4:5]), ncol=2), maxtimelag = max_u, p = num_variables, locations = location, meters = T, nugeff = nugget)
+  }else if(sim_model == 'matern' & rand_vel == F){
+    sim.cov <- simulate_model(mod = sim_model, randvel = rand_vel, theta = true_param_spatial, wind = true_param_velocity, maxtimelag = max_u, p = num_variables, locations = location, meters = T, nugeff = nugget)
+  }else if(sim_model == 'lmc' & rand_vel == T){
+    sim.cov <- simulate_model(mod = sim_model, randvel = rand_vel, theta = true_param_spatial, wind = true_param_velocity[1:4], wind_var = list(matrix(c(true_param_velocity[5:6], true_param_velocity[6:7]), ncol=2), matrix(c(true_param_velocity[8:9], true_param_velocity[9:10]), ncol=2)), maxtimelag = max_u, p = num_variables, locations = location, meters = T, nugeff = nugget)
+  }else if(sim_model == 'lmc' & rand_vel == F){
+    sim.cov <- simulate_model(mod = sim_model, randvel = rand_vel, theta = true_param_spatial, wind = true_param_velocity, maxtimelag = max_u, p = num_variables, locations = location, meters = T, nugeff = nugget)
   }
   
   for(iter in 1:num_sim){
@@ -33,33 +35,40 @@ simulation_study <- function(true_param_spatial, true_param_velocity, sim_model,
       }
     }
     
-    if(sim_model == 1 | sim_model == 2){
+    if(sim_model == 'matern'){
       theta_init <- c(3.218, 3.736, 794.8, 1, 1, max(binned[which(binned[,3] == 0), 6])-0.001) #change this values to empirical
       emp_vel <- which.max(binned[which(binned[,3] == 1), 4])
       
-      if(sim_model == 1){
+      if(rand_vel == T){
         w_init <- c(1 - binned[which(binned[,3] == 1)[emp_vel], 4], (1 - binned[which(binned[,3] == 1)[emp_vel], 4])/10, 1 - binned[which(binned[,3] == 1)[emp_vel], 4], binned[which(binned[,3] == 1)[emp_vel], 1:2])
-        mod <- fit_model(init = theta_init, wind_init = w_init, mod = 1, weight = 3, empcov_spatial = binned[which(binned[,3]==0),], empcov_st = binned[which(binned[,3] == 1),], nug_eff = nugget, meters = T, num_iter = 0)
-      }else if(sim_model == 2){
+        mod <- fit_model(init = theta_init, wind_init = w_init, mod = sim_model, randvel = rand_vel, weight = 3, empcov_spatial = binned[which(binned[,3]==0),], empcov_st = binned[which(binned[,3] == 1),], nug_eff = nugget, meters = T, num_iter = 0)
+      }else if(rand_vel == F){
         w_init <- binned[which(binned[,3] == 1)[emp_vel], 1:2]
-        mod <- fit_model(init = theta_init, wind_init = w_init, mod = 2, weight = 3, empcov_spatial = binned[which(binned[,3]==0),], empcov_st = binned[which(binned[,3] > 0),], nug_eff = nugget, meters = T, num_iter = 10)
+        mod <- fit_model(init = theta_init, wind_init = w_init, mod = sim_model, randvel = rand_vel, weight = 3, empcov_spatial = binned[which(binned[,3]==0),], empcov_st = binned[which(binned[,3] > 0),], nug_eff = nugget, meters = T, num_iter = 10)
       }
-    }else{
+    }else if(sim_model == 'lmc'){
       theta_init <- c(3, 4, 300, 705, 0.99, 0.99, 0.838, 0.545, 0.0001, 0.999)
-      w_init <- c(-2600000, -661200, 3604000, 1947000)
-      mod <- fit_model(init = theta_init, wind_init = w_init, mod = 3, weight = 3, empcov_spatial = binned[which(binned[,3]==0),], empcov_st = binned[which(binned[,3] > 0),], nug_eff = nugget, meters = T, num_iter = 10)
+      if(rand_vel == T){
+        w_init <- c(-2600000, -661200, 3604000, 1947000, 100, 0.00009, 100, 100, 0.00009, 100)
+        mod <- fit_model(init = theta_init, wind_init = w_init, mod = sim_model, randvel = rand_vel, weight = 3, empcov_spatial = binned[which(binned[,3]==0),], empcov_st = binned[which(binned[,3] == 1),], nug_eff = nugget, meters = T, num_iter = 0)
+      }else if(rand_vel == F){
+        w_init <- c(-2600000, -661200, 3604000, 1947000)
+        mod <- fit_model(init = theta_init, wind_init = w_init, mod = sim_model, randvel = rand_vel, weight = 3, empcov_spatial = binned[which(binned[,3]==0),], empcov_st = binned[which(binned[,3] > 0),], nug_eff = nugget, meters = T, num_iter = 10)
+      }
     }
     mod_params[iter, ] <- mod$parameters
   }
   return(mod_params)
 }
 
-simulate_model <- function(mod, theta, wind, wind_var = NULL, maxtimelag, p = 2, locations, meters = T, nugeff){
-  if(mod == 1){
+simulate_model <- function(mod, theta, wind, wind_var = NULL, maxtimelag, p = 2, locations, meters = T, nugeff, randvel){
+  if(mod == 'matern' & randvel == T){
     cov.mod <- matern_random_cov(theta, wind, wind_var, max_time_lag = maxtimelag, q = p, new_locations = locations, nug_eff = nugeff )
-  }else if(mod == 2){
+  }else if(mod == 'matern' & randvel == F){
     cov.mod <- matern_cov(theta, wind, max_time_lag = maxtimelag, q = p, new_locations = locations, nug_eff = nugeff )
-  }else{
+  }else if(mod == 'lmc' & randvel == T){
+    cov.mod <- lmc_random_cov(theta, wind, wind_var, max_time_lag = maxtimelag, q = p, new_locations = locations, nug_eff = nugeff )
+  }else if(mod == 'lmc' & randvel == F){
     cov.mod <- lmc_cov(theta, wind, max_time_lag = maxtimelag, q = p, new_locations = locations, nug_eff = nugeff )
   }
   return(cov.mod)
@@ -294,14 +303,19 @@ lmc_cov <- function(theta, wind, max_time_lag, q, new_locations = locations, met
   return(S1)
 }
 
-lmc_random_cov <- function(theta, wind, wind_var, max_time_lag, q, new_locations, meters = T){
+lmc_random_cov <- function(theta, wind, wind_var, max_time_lag, q, new_locations, meters = T, nug_eff){
   
   nu <- theta[1:2]
   beta <- theta[3:4]
-  var <- c(1,1)
-  nug <- c(0,0)
+  var <- theta[5:6]
   
-  alpha <- matrix(c(theta[5], theta[6], theta[7], theta[8]), ncol = 2, byrow = T)
+  if(nug_eff == T){
+    nug <- theta[7:8]
+  }else{
+    nug <- c(0, 0)
+  }
+  
+  alpha <- matrix(c(theta[7], theta[8], theta[9], theta[10]), ncol=2, byrow=T)
   
   if(meters == T){
     w <- matrix(wind, ncol = 2, byrow = T)/1000
@@ -314,30 +328,42 @@ lmc_random_cov <- function(theta, wind, wind_var, max_time_lag, q, new_locations
   sigma <- wind_var
   
   S <- list()
-  temploc <- list()
+  temploc <- denom <- list()
   
   for(i in 1:q){
     
     temploc[[1]] <- loc <- spDists(coords, longlat = F)
+    denom[[1]] <- matrix(1, ncol = ncol(temploc[[1]]), nrow = nrow(temploc[[1]]))
     
     if (max_time_lag == 0){
       loc <- spDists(coords, longlat = F)
     } else {
       for (tt in 1:max_time_lag){
-        temploc[[tt + 1]] <- sqrt((coords - tt*w[i,])%*%solve(diag(2) + sigma[[i]])%*%t(coords - tt*w[i,]))
+        
+        temploc.temp <- matrix(, ncol=nrow(coords), nrow=nrow(coords))
+        for(rr in 1:nrow(coords)){
+          for(ss in 1:nrow(coords)){
+            temploc.temp[rr,ss] <- sqrt((coords[rr,] - tt*w[i,])%*%solve(diag(2) + sigma[[i]])%*%matrix((coords[ss,] - tt*w[i,]), ncol=1))
+          }
+        }
+        
+        temploc[[tt + 1]] <- temploc.temp
+        denom[[tt + 1]] <- sqrt(det(diag(2) + tt^2*sigma[[i]]))
       }
     }
     dist0 <- toeplitz_mat(temploc)
+    denom.fin <- toeplitz_mat(denom)
     
     SS <- ifelse(dist0 != 0, var[i]*(dist0/beta[i])^nu[i] * besselK(dist0/beta[i], nu[i])/(2^(nu[i]-1)*gamma(nu[i])), var[i] + nug[i])
     
-    S[[i]] <- SS
+    S[[i]] <- SS/denom.fin
   }
   S1 <- rbind(cbind(alpha[1,1]^2*S[[1]] + alpha[1,2]^2*S[[2]], alpha[1,1]*alpha[2,1]*S[[1]] + alpha[1,2]*alpha[2,2]*S[[2]]),
               cbind(alpha[1,1]*alpha[2,1]*S[[1]] + alpha[1,2]*alpha[2,2]*S[[2]], alpha[2,1]^2*S[[1]] + alpha[2,2]^2*S[[2]]))
   
   return(S1)
 }
+
 #---------NONSTATIONARY---------#
 
 matern_cov_regular_grid <-function(theta,wind,time){
