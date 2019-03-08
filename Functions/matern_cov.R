@@ -343,7 +343,7 @@ lmc_random_cov <- function(theta, wind, wind_var, max_time_lag, q, new_locations
         temploc.temp <- matrix(, ncol=nrow(coords), nrow=nrow(coords))
         for(rr in 1:nrow(coords)){
           for(ss in 1:nrow(coords)){
-            temploc.temp[rr,ss] <- sqrt((coords[rr,] - tt*w[i,])%*%solve(diag(2) + sigma[[i]])%*%matrix((coords[ss,] - tt*w[i,]), ncol=1))
+            temploc.temp[rr,ss] <- sqrt((coords[rr,] - coords[ss,] - tt*w[i,])%*%solve(diag(2) + sigma[[i]])%*%matrix((coords[rr,] - coords[ss,] - tt*w[i,]), ncol=1))
           }
         }
         
