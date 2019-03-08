@@ -12,6 +12,7 @@ source(file=paste(root,"Functions/empirical_spacetime_covariance.R",sep=''))
 source(file=paste(root,"Functions/data_format.R",sep=''))
 source(file=paste(root,"Functions/matern_cov.R",sep=''))
 source(file=paste(root,"Functions/toeplitz_mat.R",sep=''))
+source(file=paste(root,"Functions/wls_objective_functions.R",sep=''))
 
 setwd(paste(root,'Figures',sep=''))
 
@@ -20,7 +21,7 @@ load(paste(root,'Data/simulated_locations_only.RData',sep=''))
 
 ############################################################################
 ############################################################################
-###################     SIMULATED DATA ANALYSIS         ####################
+###################     SIMULATED DATA ANALYSIS       ######################
 ############################################################################
 ############################################################################
 
@@ -36,77 +37,14 @@ for(aa in 1:length(outsample_loc_index)){
 #------------------------------------------
 
 kappa <- matrix(c(0, 0, 0, 0), ncol=2, byrow=T)
-thets <- c(3.218, 3.736, 794.8, 0.59, 1, 1, 0, 0) #set parameters to empirical estimates of real dataset
+thets <- c(3.218, 3.736, 794.8, 0.59, 1, 1) #set parameters to empirical estimates of real dataset
+thets_lmc <- c(3, 4, 281.6, 700, 1, 1, 0.838, 0.545, 0, 0.999)
 
-#simulation_study(true_param = )
-sim.cov <- simulate_model(mod = 1, theta = thets, wind = c(-497426.7319, -39634.6099), wind_var = matrix(c(100,0.00009,0.00009,100),ncol=2), maxtimelag = 1, p = 2, locations = grid_locations_UTM[pts,], meters = T)
+m1 <- simulation_study(true_param_spatial = thets, true_param_velocity = c(-497426.7319, -39634.6099, 100, 0.00009, 100), sim_model = 1, num_sim = 1, max_u = 1, num_variables = 2, location = grid_locations_UTM[pts,])
+m2 <- simulation_study(true_param_spatial = thets, true_param_velocity = c(-497426.7319, -39634.6099), sim_model = 2, num_sim = 1, max_u = 1, num_variables = 2, location = grid_locations_UTM[pts,])
+m3 <- simulation_study(true_param_spatial = thets_lmc, true_param_velocity = c(-2600000, -661200, 3604000, 1947000), sim_model = 3, num_sim = 1, max_u = 1, num_variables = 2, location = grid_locations_UTM[pts,])
 
-mod1_params <- matrix(, ncol=11, nrow=100)
-
-for(iter in 1:1){
-  
-  A <- mvrnorm(n = 1000, mu = rep(0, dim(sim.cov)[1]), Sigma = sim.cov)
-  A1 <- A[, -to_remove]
-  
-  conso_cor <- empirical_st_cov(data1 = A1, locations = grid_locations_UTM[pts[insample_loc_index], ], max_time_lag = time - 1, simulated = T)  
-  binned <- empirical_covariance_dataframe(data1_cov = conso_cor, simulated = T)
-  
-  theta_init <- c(3.218, 3.736, 794.8, 1, 1, 0.5) #change this values to empirical
-  emp_vel <- which.max(binned[which(binned[,3] == 1),4])
-  #emp_vel_cross <- which.max(binned[which(binned[,3] == 1),6])
-  w_init <- c(100, 0.00009, 100, binned[which(binned[,3] == 1)[emp_vel], 1:2])
-  mod1 <- fit_model(init = theta_init, wind_init = w_init, mod = 1, weight = 3, empcov_spatial = binned[which(binned[,3]==0),], empcov_st = binned[which(binned[,3] == 1),], nug_eff = F, meters = T, num_iter = 0)
-  mod1_params[iter, ] <- mod1$parameters
-  
-}
-
-sim.cov <- simulate_model(mod = 2, theta = thets, wind = c(-497426.7319, -39634.6099), maxtimelag = 1, p = 2, locations = grid_locations_UTM[pts,], meters = T)
-
-mod2_params <- matrix(, ncol=8, nrow=100)
-
-for(iter in 1:100){
-  
-  A <- mvrnorm(n = 1000, mu = rep(0, dim(sim.cov)[1]), Sigma = sim.cov)
-  A1 <- A[, -to_remove]
-  
-  conso_cor <- empirical_st_cov(data1 = A1, locations = grid_locations_UTM[pts[insample_loc_index], ], max_time_lag = time - 1, simulated = T)  
-  binned <- empirical_covariance_dataframe(data1_cov = conso_cor, simulated = T)
-  
-  #if(iter == 1){
-  #  hlag <- sqrt(binned[which(binned[,3]==0), 1]^2 + binned[which(binned[,3]==0), 2]^2)
-    #display plots
-  #  par(mfrow = c(1,3))
-  #  plot(hlag/1000, binned[which(binned[,3]==0), 4], pch=3, ylab='', col=1,xlab='Spatial Lag (km)', main='', col.main= "#4EC1DE", ylim=c(0,1))
-  #  plot(hlag/1000, binned[which(binned[,3]==0), 5], pch=3, ylab='', col=1,xlab='Spatial Lag (km)', main='', col.main= "#4EC1DE", ylim=c(0,1))
-  #  plot(hlag/1000, binned[which(binned[,3]==0), 6], pch=3, ylab='', col=1,xlab='Spatial Lag (km)', main='', col.main= "#4EC1DE", ylim=c(0,1))
-  #}
-  
-  theta_init <- c(3.218, 3.736, 794.8, 1, 1, 0.5) #change this values to empirical
-  w_init <- c(-500400, -59740)
-  mod2 <- fit_model(init = theta_init, wind_init = w_init, mod = 2, weight = 3, empcov_spatial = binned[which(binned[,3]==0),], empcov_st = binned[which(binned[,3] > 0),], nug_eff = F, meters = T, num_iter = 10)
-  mod2_params[iter, ] <- mod2$parameters
-  
-}
-
-thets <- c(3,4,281.6,700,1,1,0.838,0.545,0,0.999)
-
-sim.cov <- simulate_model(mod = 3, theta = thets, wind = c(-2600000, -661200, 3604000, 1947000), maxtimelag = 1, p = 2, locations = grid_locations_UTM[pts,], meters = T)
-
-mod3_params <- matrix(, ncol=14, nrow=100)
-
-for(iter in 1:1){
-  A <- mvrnorm(n = 1000, mu = rep(0, dim(sim.cov)[1]), Sigma = sim.cov)
-  A1 <- A[, -to_remove]
-  
-  conso_cor <- empirical_st_cov(data1 = A1, locations = grid_locations_UTM[pts[insample_loc_index], ], max_time_lag = time - 1, simulated = T)  
-  binned <- empirical_covariance_dataframe(data1_cov = conso_cor, simulated = T)
-  
-  theta_init <- c(3,4,281.6,705,0.9,0.9,0.838,0.545,0.0001,0.999)
-  w_init <- c(-2600000, -661200, 3604000, 1947000)
-  mod3 <- fit_model(init = theta_init, wind_init = w_init, mod = 3, weight = 3, empcov_spatial = binned[which(binned[,3]==0),], empcov_st = binned[which(binned[,3] > 0),], nug_eff = F, meters = T, num_iter = 10)
-  mod3_params[iter, ] <- mod3$parameters
-}
-
+############################################################################
 ############################################################################
 ###################           REAL DATA ANALYSIS         ###################
 ############################################################################

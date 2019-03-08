@@ -2,18 +2,70 @@
 
 #---------STATIONARY------------#
 
-simulate_model <- function(mod, theta, wind, wind_var = NULL, maxtimelag, p = 2, locations, meters = T){
-  if(mod == 1){
-    cov.mod <- matern_random_cov(theta, wind, wind_var, max_time_lag = maxtimelag, q = p, new_locations = locations)
-  }else if(mod == 2){
-    cov.mod <- matern_cov(theta, wind, max_time_lag = maxtimelag, q = p, new_locations = locations)
+simulation_study <- function(true_param_spatial, true_param_velocity, sim_model, num_sim, max_u, num_variables, location, plot = T, nugget = F){
+  
+  mod_params <- matrix(, ncol = length(true_param_spatial) + length(true_param_velocity), nrow = num_sim)
+  
+  if(sim_model == 1){
+    sim.cov <- simulate_model(mod = sim_model, theta = true_param_spatial, wind = true_param_velocity[1:2], wind_var = matrix(c(true_param_velocity[3:4], true_param_velocity[4:5]), ncol=2), maxtimelag = max_u, p = num_variables, locations = location, meters = T, nugeff = nugget)
+  }else if(sim_model == 2){
+    sim.cov <- simulate_model(mod = sim_model, theta = true_param_spatial, wind = true_param_velocity, maxtimelag = max_u, p = num_variables, locations = location, meters = T, nugeff = nugget)
   }else{
-    cov.mod <- lmc_cov(theta, wind, max_time_lag = maxtimelag, q = p, new_locations = locations)
+    sim.cov <- simulate_model(mod = sim_model, theta = true_param_spatial, wind = true_param_velocity, maxtimelag = max_u, p = num_variables, locations = location, meters = T, nugeff = nugget)
+  }
+  
+  for(iter in 1:num_sim){
+    
+    A <- mvrnorm(n = 1000, mu = rep(0, dim(sim.cov)[1]), Sigma = sim.cov)
+    A1 <- A[, -to_remove]
+    
+    conso_cor <- empirical_st_cov(data1 = A1, locations = location[insample_loc_index, ], max_time_lag = max_u, simulated = T)  
+    binned <- empirical_covariance_dataframe(data1_cov = conso_cor, simulated = T)
+    
+    if(plot == T){
+      if(iter == 1){
+        hlag <- sqrt(binned[which(binned[,3]==0), 1]^2 + binned[which(binned[,3]==0), 2]^2)
+      #display plots
+        par(mfrow = c(1,3))
+        plot(hlag/1000, binned[which(binned[,3]==0), 4], pch=3, ylab='', col=1,xlab='Spatial Lag (km)', main='', col.main= "#4EC1DE", ylim=c(0,1))
+        plot(hlag/1000, binned[which(binned[,3]==0), 5], pch=3, ylab='', col=1,xlab='Spatial Lag (km)', main='', col.main= "#4EC1DE", ylim=c(0,1))
+        plot(hlag/1000, binned[which(binned[,3]==0), 6], pch=3, ylab='', col=1,xlab='Spatial Lag (km)', main='', col.main= "#4EC1DE", ylim=c(0,1))
+      }
+    }
+    
+    if(sim_model == 1 | sim_model == 2){
+      theta_init <- c(3.218, 3.736, 794.8, 1, 1, max(binned[which(binned[,3] == 0), 6])-0.001) #change this values to empirical
+      emp_vel <- which.max(binned[which(binned[,3] == 1), 4])
+      
+      if(sim_model == 1){
+        w_init <- c(1 - binned[which(binned[,3] == 1)[emp_vel], 4], (1 - binned[which(binned[,3] == 1)[emp_vel], 4])/10, 1 - binned[which(binned[,3] == 1)[emp_vel], 4], binned[which(binned[,3] == 1)[emp_vel], 1:2])
+        mod <- fit_model(init = theta_init, wind_init = w_init, mod = 1, weight = 3, empcov_spatial = binned[which(binned[,3]==0),], empcov_st = binned[which(binned[,3] == 1),], nug_eff = nugget, meters = T, num_iter = 0)
+      }else if(sim_model == 2){
+        w_init <- binned[which(binned[,3] == 1)[emp_vel], 1:2]
+        mod <- fit_model(init = theta_init, wind_init = w_init, mod = 2, weight = 3, empcov_spatial = binned[which(binned[,3]==0),], empcov_st = binned[which(binned[,3] > 0),], nug_eff = nugget, meters = T, num_iter = 10)
+      }
+    }else{
+      theta_init <- c(3, 4, 300, 705, 0.99, 0.99, 0.838, 0.545, 0.0001, 0.999)
+      w_init <- c(-2600000, -661200, 3604000, 1947000)
+      mod <- fit_model(init = theta_init, wind_init = w_init, mod = 3, weight = 3, empcov_spatial = binned[which(binned[,3]==0),], empcov_st = binned[which(binned[,3] > 0),], nug_eff = nugget, meters = T, num_iter = 10)
+    }
+    mod_params[iter, ] <- mod$parameters
+  }
+  return(mod_params)
+}
+
+simulate_model <- function(mod, theta, wind, wind_var = NULL, maxtimelag, p = 2, locations, meters = T, nugeff){
+  if(mod == 1){
+    cov.mod <- matern_random_cov(theta, wind, wind_var, max_time_lag = maxtimelag, q = p, new_locations = locations, nug_eff = nugeff )
+  }else if(mod == 2){
+    cov.mod <- matern_cov(theta, wind, max_time_lag = maxtimelag, q = p, new_locations = locations, nug_eff = nugeff )
+  }else{
+    cov.mod <- lmc_cov(theta, wind, max_time_lag = maxtimelag, q = p, new_locations = locations, nug_eff = nugeff )
   }
   return(cov.mod)
 }
 
-matern_cov <- function(theta, wind, max_time_lag, q, new_locations = locations, meters = T){
+matern_cov <- function(theta, wind, max_time_lag, q, new_locations = locations, meters = T, nug_eff){
   
   w <- wind
   
@@ -56,7 +108,12 @@ matern_cov <- function(theta, wind, max_time_lag, q, new_locations = locations, 
   beta <- theta[3]
   rho <- theta[4]
   var <- theta[5:6]
-  nug <- theta[7:8]
+  
+  if(nug_eff == T){
+    nug <- theta[7:8]
+  }else{
+    nug <- c(0, 0)
+  }
   
   S=matrix(NA,  q*dim(dist0)[1], q*dim(dist0)[1])
   
@@ -94,7 +151,7 @@ matern_cov <- function(theta, wind, max_time_lag, q, new_locations = locations, 
   return(S1)
 }
 
-matern_random_cov <- function(theta, wind, wind_var, max_time_lag, q, new_locations, meters = T){
+matern_random_cov <- function(theta, wind, wind_var, max_time_lag, q, new_locations, meters = T, nug_eff){
   
   Sigma <- wind_var
   
@@ -102,7 +159,11 @@ matern_random_cov <- function(theta, wind, wind_var, max_time_lag, q, new_locati
   beta <- theta[3]
   rho <- theta[4]
   var <- theta[5:6]
-  nug <- theta[7:8]
+  if(nug_eff == T){
+    nug <- theta[7:8]
+  }else{
+    nug <- c(0, 0)
+  }
   
   if(meters == T){
     w <- wind/1000
@@ -185,12 +246,17 @@ matern_random_cov <- function(theta, wind, wind_var, max_time_lag, q, new_locati
   return(S)
 }
 
-lmc_cov <- function(theta, wind, max_time_lag, q, new_locations = locations, meters = T){
+lmc_cov <- function(theta, wind, max_time_lag, q, new_locations = locations, meters = T, nug_eff){
   
   nu <- theta[1:2]
   beta <- theta[3:4]
   var <- theta[5:6]
-  nug <- c(0,0)
+  
+  if(nug_eff == T){
+    nug <- theta[7:8]
+  }else{
+    nug <- c(0, 0)
+  }
   
   alpha <- matrix(c(theta[7], theta[8], theta[9], theta[10]), ncol=2, byrow=T)
   
