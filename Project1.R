@@ -8,11 +8,10 @@ if(WORKSTATION == 1){
 }
 
 source(file=paste(root,"Functions/load_packages.R",sep=''))
-source(file=paste(root,"Functions/empirical_spacetime_covariance.R",sep=''))
+source(file=paste(root,"Functions/main_func.R",sep=''))
 source(file=paste(root,"Functions/data_format.R",sep=''))
 source(file=paste(root,"Functions/cov_func.R",sep=''))
 source(file=paste(root,"Functions/toeplitz_mat.R",sep=''))
-source(file=paste(root,"Functions/wls_objective_functions.R",sep=''))
 
 setwd(paste(root,'Figures',sep=''))
 
