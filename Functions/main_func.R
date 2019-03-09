@@ -10,17 +10,22 @@ fitting <- function(coordinates, obs1, obs2 = NULL){
   conso_cor <- empirical_st_cov(data1 = t(data_matrix[insample_loc_index, 1:(ncol(data_matrix)/2)]), data2 = t(data_matrix[insample_loc_index, (ncol(data_matrix)/2 + 1):ncol(data_matrix)]), locations = coordinates[insample_loc_index,], max_time_lag = 5, simulated = F)
   binned <- empirical_covariance_dataframe(data1_cov = var1_cov, data2_cov = var2_cov, cross_cov = cross, simulated = F)
   
+  R <- matrix(c(-1.1339125*cos(116.9811232), -1.1339125*sin(116.9811232), 0.8617141*sin(116.9811232),
+                -0.8617141*cos(116.9811232)), ncol=2, byrow=T)
+  
   theta_init <- c(3.218, 3.736, 794.8, 1, 1, max(binned[which(binned[,3] == 0), 6]) - 0.001)
   emp_vel <- which.max(binned[which(binned[,3] == 1), 4])
-  w_init <- binned[which(binned[,3] == 1)[emp_vel], 1:2]
-  mod <- fit_model(init = theta_init, wind_init = w_init, mod = 'matern', randvel = F, weight = 3, empcov_spatial = binned[which(binned[,3]==0),], empcov_st = binned[which(binned[,3] > 0),], nug_eff = F, meters = T, num_iter = 10)
+  kappa_ind <- which.max(binned[which(binned[,3] == 0), 6])
+  kappa <- binned[which(binned[,3] == 0)[kappa_ind], 1:2] %*% R
+  w_init <- binned[which(binned[,3] == 1)[emp_vel], 1:2] %*% R
+  mod <- fit_model(init = theta_init, wind_init = w_init, mod = 'matern', randvel = F, weight = 3, empcov_spatial = binned[which(binned[,3]==0),], empcov_st = binned[which(binned[,3] == 1),], nug_eff = F, meters = T, num_iter = 10, aniso = T, rotation_matrix = R, asym = kappa)
   
   hlag <- sqrt(binned[which(binned[,3] == 0), 1]^2 + binned[which(binned[,3] == 0), 2]^2)
   #display plots
   par(mfrow = c(1,3))
-  plot(hlag/1000, binned[which(binned[,3]==0), 4], pch=3, ylab='', col=1,xlab='Spatial Lag (km)', main='', col.main= "#4EC1DE", ylim=c(0,1))
-  plot(hlag/1000, binned[which(binned[,3]==0), 5], pch=3, ylab='', col=1,xlab='Spatial Lag (km)', main='', col.main= "#4EC1DE", ylim=c(0,1))
-  plot(hlag/1000, binned[which(binned[,3]==0), 6], pch=3, ylab='', col=1,xlab='Spatial Lag (km)', main='', col.main= "#4EC1DE", ylim=c(0,1))
+  plot(hlag/1000, binned[which(binned[,3] == 0), 4], pch = 3, ylab='', col = 1, xlab='Spatial Lag (km)', main='', col.main = "#4EC1DE", ylim = c(0,1))
+  plot(hlag/1000, binned[which(binned[,3] == 0), 5], pch = 3, ylab='', col = 1, xlab='Spatial Lag (km)', main='', col.main = "#4EC1DE", ylim = c(0,1))
+  plot(hlag/1000, binned[which(binned[,3] == 0), 6], pch = 3, ylab='', col = 1, xlab='Spatial Lag (km)', main='', col.main = "#4EC1DE", ylim = c(0,1))
   
 }
 
@@ -245,30 +250,30 @@ simulate_model <- function(mod, theta, wind, wind_var = NULL, maxtimelag, p = 2,
 }
 
 fit_model <- function(init = NULL, wind_init, mod, randvel, weight, empcov_spatial = NULL, empcov_st, nug_eff = F, meters = T, num_iter, 
-                      est_param.temp = NULL, aniso = F, rotation_matrix = NULL){
+                      est_param.temp = NULL, aniso = F, rotation_matrix = NULL, asym = NULL){
   
   # num_iter : number of loops to run optim
   
   if(mod == 'matern' | mod == 'gneitingmatern'){
-    fit1.mod <- optim(par = init[-length(init)], wls, emp_cov1 = empcov_spatial, nug_eff = F, meters = T, weights = weight, step = 1, aniso = F, model = mod, control=list(maxit = 10000, parscale = init[-length(init)], trace = 5))
-    fit2.mod <- optim(par = init[length(init)], wls, emp_cov1 = empcov_spatial, nug_eff = F, meters = T, weights = weight, step = 2, est_param = fit1.mod$par, aniso = F, model = mod, method='SANN', control = list(maxit = 3000, parscale = init[length(init)], trace = 5))
+    fit1.mod <- optim(par = init[-length(init)], wls, emp_cov1 = empcov_spatial, nug_eff = F, meters = T, weights = weight, step = 1, ani = aniso, rotmat = rotation_matrix, asymmetry = asym, model = mod, control=list(maxit = 10000, parscale = init[-length(init)], trace = 5))
+    fit2.mod <- optim(par = init[length(init)], wls, emp_cov1 = empcov_spatial, nug_eff = F, meters = T, weights = weight, step = 2, est_param = fit1.mod$par, ani = aniso, rotmat = rotation_matrix, asymmetry = asym, model = mod, method='SANN', control = list(maxit = 3000, parscale = init[length(init)], trace = 5))
     
     if(mod == 'matern'){
       if(randvel == T){
         
-        fit3.mod <- optim(par = wind_init, wls, emp_cov1 = empcov_st, nug_eff = F, meters = T, weights = weight, step = 3, est_param = c(fit1.mod$par, fit2.mod$par), aniso = F, rand.vel = T, model = mod, control = list(maxit = 10000, parscale = wind_init, trace = 5))
+        fit3.mod <- optim(par = wind_init, wls, emp_cov1 = empcov_st, nug_eff = F, meters = T, weights = weight, step = 3, est_param = c(fit1.mod$par, fit2.mod$par), ani = aniso, rotmat = rotation_matrix, asymmetry = asym, rand.vel = randvel, model = mod, control = list(maxit = 10000, parscale = wind_init, trace = 5))
         
         lst <- list(parameters = c(est_param.temp, fit3.mod$par), fn_value = fit1.mod$value + fit2.mod$value + fit3.mod$value)
         
         return(lst)
       }else if(randvel == F){
         
-        fit3.mod <- optim(par = wind_init, wls, emp_cov1 = empcov_st, nug_eff = F, meters = T, weights = weight, step = 3, est_param = c(fit1.mod$par, fit2.mod$par), aniso = F, rand.vel = F, model = mod, control = list(maxit = 10000, parscale = wind_init, trace = 5))
+        fit3.mod <- optim(par = wind_init, wls, emp_cov1 = empcov_st, nug_eff = F, meters = T, weights = weight, step = 3, est_param = c(fit1.mod$par, fit2.mod$par), ani = aniso, rotmat = rotation_matrix, asymmetry = asym, rand.vel = randvel, model = mod, control = list(maxit = 10000, parscale = wind_init, trace = 5))
         
         if(num_iter > 0){
           for(iter3 in 1:num_iter){
             new_wind_init <- fit3.mod$par
-            fit3.mod <- optim(par = new_wind_init, wls, emp_cov1 = empcov_st, nug_eff = F, meters = T, weights = weight, step = 3, est_param = c(fit1.mod$par, fit2.mod$par), aniso = F, rand.vel = F, model = mod, control = list(maxit = 10000, parscale = new_wind_init, trace = 5))
+            fit3.mod <- optim(par = new_wind_init, wls, emp_cov1 = empcov_st, nug_eff = F, meters = T, weights = weight, step = 3, est_param = c(fit1.mod$par, fit2.mod$par), ani = aniso, rotmat = rotation_matrix, asymmetry = asym, rand.vel = randvel, model = mod, control = list(maxit = 10000, parscale = new_wind_init, trace = 5))
           }
         }
         
@@ -303,25 +308,32 @@ fit_model <- function(init = NULL, wind_init, mod, randvel, weight, empcov_spati
   }
 }
 
-wls <- function(theta, emp_cov1, weights, nug_eff, step, est_param = NULL, meters, aniso = F, model, rand.vel) {
+wls <- function(theta, emp_cov1, weights, nug_eff, step, est_param = NULL, meters, ani, rotmat, asymmetry, model, rand.vel) {
   
   # nug_eff: T means we also need to estimate nugget effect
   
   loss <- 0
   
-  if(!aniso == T){
+  if(!ani == T){
     R <- diag(2)
   }else{
-    R <- rotation_matrix
+    R <- rotmat
   }
   
-  #R <- matrix(c(-1.1339125 *cos(116.9811232),-1.1339125 *sin(116.9811232),0.8617141*sin(116.9811232),
-  #              -0.8617141*cos(116.9811232)),ncol=2,byrow=T)
+  hh <- emp_cov1[,1:2] %*% R
+  
+  if(!is.null(asymmetry)){
+    hh2 <- cbind(hh[, 1] - asymmetry[1,1], hh[, 2] - asymmetry[1,2])
+  }else{
+    hh2 <- hh
+  }
   
   if(meters == T){
-    h <- sqrt(emp_cov1[,1]^2 + emp_cov1[,2]^2)/1000
+    h <- sqrt(hh[,1]^2 + hh[,2]^2)/1000
+    h2 <- sqrt(hh2[,1]^2 + hh2[,2]^2)/1000
   }else{
-    h <- sqrt(emp_cov1[,1]^2 + emp_cov1[,2]^2)
+    h <- sqrt(hh[,1]^2 + hh[,2]^2)
+    h2 <- sqrt(hh2[,1]^2 + hh2[,2]^2)
   }
   
   np <- ifelse(h != 0, 1/h, 1)
@@ -372,13 +384,13 @@ wls <- function(theta, emp_cov1, weights, nug_eff, step, est_param = NULL, meter
         return(Inf)
       }else{
         
-        theo <- ifelse(h != 0, rho*sqrt(var[1]*var[2])*(h/beta)^nu3*besselK(h/beta, nu3)/(2^(nu3-1)*gamma(nu3)), rho*sqrt(var[1]*var[2]))
+        theo <- ifelse(h2 != 0, rho*sqrt(var[1]*var[2])*(h2/beta)^nu3*besselK(h2/beta, nu3)/(2^(nu3-1)*gamma(nu3)), rho*sqrt(var[1]*var[2]))
         if (weights == 1) 
           tloss <- sum((theo - emp_cov1[,6])^2)
         if (weights == 2) 
           tloss <- sum(np* (emp_cov1[,6] - theo)^2)
         if (weights == 3) 
-          tloss <- sum(((emp_cov1[,6] - theo)/(max(emp_cov1[,6]) - theo))^2)
+          tloss <- sum(((emp_cov1[,6] - theo)/(1.001 - theo))^2)
         loss <- loss + tloss
         
         return(loss)
@@ -403,9 +415,11 @@ wls <- function(theta, emp_cov1, weights, nug_eff, step, est_param = NULL, meter
         w <- theta
         
         if(meters == T){
-          h <- sqrt((emp_cov1[,1] - emp_cov1[,3]*w[1])^2 + (emp_cov1[,2] - emp_cov1[,3]*w[2])^2)/1000
+          h <- sqrt((hh[,1] - emp_cov1[,3]*w[1])^2 + (hh[,2] - emp_cov1[,3]*w[2])^2)/1000
+          h2 <- sqrt((hh2[,1] - emp_cov1[,3]*w[1])^2 + (hh2[,2] - emp_cov1[,3]*w[2])^2)/1000
         }else{
-          h <- sqrt((emp_cov1[,1] - emp_cov1[,3]*w[1])^2 + (emp_cov1[,2] - emp_cov1[,3]*w[2])^2)
+          h <- sqrt((hh[,1] - emp_cov1[,3]*w[1])^2 + (hh[,2] - emp_cov1[,3]*w[2])^2)
+          h2 <- sqrt((hh2[,1] - emp_cov1[,3]*w[1])^2 + (hh2[,2] - emp_cov1[,3]*w[2])^2)
         }
         
         np <- ifelse(h != 0, 1/h, 1)
@@ -425,13 +439,13 @@ wls <- function(theta, emp_cov1, weights, nug_eff, step, est_param = NULL, meter
         
         for(i in 3:3){
           
-          theo <- ifelse(h!=0, rho*sqrt(var[1]*var[2])*(h/beta)^nu3*besselK(h/beta,nu3)/(2^(nu3-1)*gamma(nu3)), rho*sqrt(var[1]*var[2]))
+          theo <- ifelse(h2 != 0, rho*sqrt(var[1]*var[2])*(h2/beta)^nu3*besselK(h2/beta, nu3)/(2^(nu3-1)*gamma(nu3)), rho*sqrt(var[1]*var[2]))
           if (weights == 1) 
             tloss <- sum((theo - emp_cov1[,i+3])^2)
           if (weights == 2) 
             tloss <- sum(np * (emp_cov1[,i+3] - theo)^2)
           if (weights == 3) 
-            tloss<-sum(((emp_cov1[,i+3] - theo)/(max(emp_cov1[, 3+j]) - theo))^2)
+            tloss<-sum(((emp_cov1[,i+3] - theo)/(1.001 - theo))^2)
           loss <- loss + tloss
         }
         return(loss)
@@ -459,7 +473,7 @@ wls <- function(theta, emp_cov1, weights, nug_eff, step, est_param = NULL, meter
           for(i in 1:2){
             
             Int.func <- function(c,hvec){   
-              y.fun  <- function(y) y^(nu[i])*exp(-y)*dmvn(X=hvec[1:2], mu=hvec[3]*w, sigma=(hvec[3]^2*Sigma + beta^2*2*y*diag(2)))
+              y.fun  <- function(y) y^(nu[i])*exp(-y)*dmvn(X = hvec[1:2], mu = hvec[3]*w, sigma = (hvec[3]^2*Sigma + beta^2*2*y*diag(2)))
               sapply(c, y.fun)
             }
             lai <- function(xxxx) integrate(Int.func, lower = 0, upper = Inf, hvec = xxxx)$val
