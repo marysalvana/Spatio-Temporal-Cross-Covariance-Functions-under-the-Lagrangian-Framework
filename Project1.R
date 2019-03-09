@@ -59,20 +59,7 @@ nyears = 2004 - 1980 + 1
 ndays = 31
 nhours = 8
 
-data_matrix <- data_format_into_matrix(data1 = u[pts,], data2 = v[pts,], temporal_replicates = nyears*ndays*nhours, simulated = F)
+dat_analysis <- fitting(coordinates = grid_locations_UTM[pts,], obs1 = u[pts, 1:(nyears*ndays*nhours)], obs2 = v[pts, 1:(nyears*ndays*nhours)])
 
-var1_cov <- empirical_st_cov(data1 = t(data_matrix[insample_loc_index, 1:(ncol(data_matrix)/2)]), cross = F, locations = grid_locations_UTM[pts[insample_loc_index],], max_time_lag = 5, simulated = F)  
-var2_cov <- empirical_st_cov(data1 = t(data_matrix[insample_loc_index, (ncol(data_matrix)/2 + 1):ncol(data_matrix)]), cross = F, locations = grid_locations_UTM[pts[insample_loc_index],], max_time_lag = 5, simulated = F)  
-cross <- empirical_st_cov(data1 = t(data_matrix[insample_loc_index, 1:(ncol(data_matrix)/2)]), data2 = t(data_matrix[insample_loc_index, (ncol(data_matrix)/2 + 1):ncol(data_matrix)]), cross = T, locations = grid_locations_UTM[pts[insample_loc_index],], max_time_lag = 5, simulated = F)  
-
-binned <- empirical_covariance_dataframe(data1_cov = var1_cov, data2_cov = var2_cov, cross_cov = cross, simulated = F)
-
-hlag <- sqrt(binned[which(binned[,3] == 0), 1]^2 + binned[which(binned[,3] == 0), 2]^2)
-#display plots
-par(mfrow = c(1,3))
-plot(hlag/1000, binned[which(binned[,3]==0), 4], pch=3, ylab='', col=1,xlab='Spatial Lag (km)', main='', col.main= "#4EC1DE", ylim=c(0,1))
-plot(hlag/1000, binned[which(binned[,3]==0), 5], pch=3, ylab='', col=1,xlab='Spatial Lag (km)', main='', col.main= "#4EC1DE", ylim=c(0,1))
-plot(hlag/1000, binned[which(binned[,3]==0), 6], pch=3, ylab='', col=1,xlab='Spatial Lag (km)', main='', col.main= "#4EC1DE", ylim=c(0,1))
-
-rotation_matrix <- matrix(c(-1.1339125*cos(116.9811232), -1.1339125*sin(116.9811232),
+rot_matrix <- matrix(c(-1.1339125*cos(116.9811232), -1.1339125*sin(116.9811232),
                             0.8617141*sin(116.9811232), -0.8617141*cos(116.9811232)), ncol = 2, byrow = T)

@@ -1,6 +1,24 @@
 #---------STATIONARY---------#
 
-empirical_st_cov <- function( data1, data2 = NULL, cross, locations, max_time_lag, simulated, p = 2){
+fitting <- function(coordinates, obs1, obs2 = NULL){
+  # FORMAT OF INPUT VALUES
+  # coordinates: two-column matrix with longitude in column 1 and latitude in column 2
+  # obs1: T-column matrix of observations where a row represents observations of one location and the columns are hourly/monthly/yearly observations
+  # obs2: another covariate
+  
+  data_matrix <- data_format_into_matrix(data1 = obs1, data2 = obs2, temporal_replicates = ncol(obs1), simulated = F)
+  conso_cor <- empirical_st_cov(data1 = t(data_matrix[insample_loc_index, 1:(ncol(data_matrix)/2)]), data2 = t(data_matrix[insample_loc_index, (ncol(data_matrix)/2 + 1):ncol(data_matrix)]), locations = coordinates[insample_loc_index,], max_time_lag = 5, simulated = F)
+  binned <- empirical_covariance_dataframe(data1_cov = var1_cov, data2_cov = var2_cov, cross_cov = cross, simulated = F)
+  hlag <- sqrt(binned[which(binned[,3] == 0), 1]^2 + binned[which(binned[,3] == 0), 2]^2)
+  #display plots
+  par(mfrow = c(1,3))
+  plot(hlag/1000, binned[which(binned[,3]==0), 4], pch=3, ylab='', col=1,xlab='Spatial Lag (km)', main='', col.main= "#4EC1DE", ylim=c(0,1))
+  plot(hlag/1000, binned[which(binned[,3]==0), 5], pch=3, ylab='', col=1,xlab='Spatial Lag (km)', main='', col.main= "#4EC1DE", ylim=c(0,1))
+  plot(hlag/1000, binned[which(binned[,3]==0), 6], pch=3, ylab='', col=1,xlab='Spatial Lag (km)', main='', col.main= "#4EC1DE", ylim=c(0,1))
+  
+}
+
+empirical_st_cov <- function(data1, data2, locations, max_time_lag, simulated, p = 2){
   
   # input: data matrix with temporal replicates as rows and each column represents the locations
   # cross: TRUE or FALSE
@@ -12,79 +30,51 @@ empirical_st_cov <- function( data1, data2 = NULL, cross, locations, max_time_la
   
   if(!simulated == TRUE){
     
-    mean = colMeans(data1)
-    scov = matrix(c(0), ncol(data1), ncol(data1))
+    mean <- colMeans(data1)
+    mean2 <- colMeans(data2)
+    scov <- scov2 <- scov3 <- matrix(c(0), ncol(data1), ncol(data1))
     n_stations = ncol(data1)
     
-    if(!cross == TRUE){
+    for(tau in 0:max_time_lag){
       
-      for(tau in 0:max_time_lag){
-        
-        for(i in (tau+1):(nrow(data1)-tau)){
-          scov = scov + (data1[i,] - mean)%*%t(data1[i+tau,] - mean)
-        }
-        
-        scov = scov/(nrow(data1) - tau)
-        
-        sd = apply(data1, 2, sd)
-        
-        Dz = sd*diag(n_stations)
-        
-        scor = solve(Dz)%*%scov%*%solve(Dz)
-        
-        ## Arrange the empirical covariance values in one dataframe/matrix. 
-        
-        loc <- 1
-        xlag <- locations[loc,1]-locations[,1]
-        ylag <- locations[loc,2]-locations[,2]
-        emp_vals <- scor[,loc]
-        
-        for(loc in 2:ncol(data1)){
-          xlag <- c(xlag, locations[loc,1] - locations[,1])
-          ylag <- c(ylag, locations[loc,2] - locations[,2])
-          emp_vals <- c(emp_vals,scor[,loc])
-        }
-        emp_temp <- data.frame(xlag,ylag,emp_vals)
-        colnames(emp_temp) <- c('xlag', 'ylag', 'correlation')
-        emp[[tau+1]] <- emp_temp
+      for(i in (tau+1):(nrow(data1)-tau)){
+        scov = scov + (data1[i,] - mean)%*%t(data1[i + tau,] - mean)
+        scov2 = scov2 + (data2[i,] - mean2)%*%t(data2[i + tau,] - mean2)
+        scov3 = scov3 + (data1[i,] - mean)%*%t(data2[i + tau,] - mean2)
       }
       
-    }else{
+      scov <- scov/(nrow(data1) - tau)
+      scov2 <- scov2/(nrow(data1) - tau)
+      scov3 <- scov3/(nrow(data1) - tau)
       
-      for(tau in 0:max_time_lag){
-        
-        mean2 = colMeans(data2)
-        
-        for(i in (tau+1):(nrow(data1)-tau)){
-          scov = scov + (data1[i,] - mean)%*%t(data2[i+tau,] - mean2)
-          
-        }
-        scov = scov/(nrow(data1) - tau)
-        
-        sd = apply(data1, 2, sd)
-        sd2 = apply(data2, 2, sd)
-        
-        Dz = sd*diag(n_stations)
-        Dz2 = sd2*diag(n_stations)
-        
-        scor = solve(Dz)%*%scov%*%solve(Dz2)
-        
-        ## Arrange the empirical covariance values in one dataframe/matrix. 
-        
-        loc <- 1
-        xlag <- locations[loc,1]-locations[,1]
-        ylag <- locations[loc,2]-locations[,2]
-        emp_vals <- scor[,loc]
-        
-        for(loc in 2:ncol(data1)){
-          xlag <- c(xlag, locations[loc,1] - locations[,1])
-          ylag <- c(ylag, locations[loc,2] - locations[,2])
-          emp_vals <- c(emp_vals,scor[,loc])
-        }
-        emp_temp <- data.frame(xlag,ylag,emp_vals)
-        colnames(emp_temp) <- c('xlag', 'ylag', 'crosscorrelation')
-        emp[[tau+1]] <- emp_temp
+      sd = apply(data1, 2, sd)
+      sd2 = apply(data2, 2, sd)
+      
+      Dz = sd*diag(n_stations)
+      Dz2 = sd2*diag(n_stations)
+      
+      scor1 = solve(Dz)%*%scov%*%solve(Dz)
+      scor2 = solve(Dz2)%*%scov2%*%solve(Dz2)
+      scor3 = solve(Dz)%*%scov3%*%solve(Dz2)
+      
+      ## Arrange the empirical covariance values in one dataframe/matrix. 
+      
+      loc <- 1
+      xlag <- locations[loc,1]-locations[,1]
+      ylag <- locations[loc,2]-locations[,2]
+      emp_vals <- scor[,loc]
+      emp_vals <- cbind(scor1[,loc], scor2[,loc], scor3[,loc])
+      
+      for(loc in 1:nrow(locations)){
+        xlag <- c(xlag, locations[loc,1] - locations[,1])
+        ylag <- c(ylag, locations[loc,2] - locations[,2])
+        emp_vals <- rbind(emp_vals, cbind(scor1[,loc], scor2[,loc], scor3[,loc]))
       }
+      
+      empirical <- data.frame(xlag, ylag, emp_vals)
+      colnames(empirical) <- c('xlag', 'ylag', 'var1_cor', 'var2_cor', 'cross_cor')
+      
+      emp[[tau + 1]] <- empirical
     }
     
   }else{

@@ -1,5 +1,3 @@
-#---------MATERN FUNCTIONS FOR SIMULATIONS AND DATA ANALYSIS---------------#
-
 #---------STATIONARY------------#
 
 simulation_study <- function(true_param_spatial, true_param_velocity, sim_model, rand_vel, num_sim, max_u, num_variables, location, plot = T, nugget = F){
