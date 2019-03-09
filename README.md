@@ -1,2 +1,2 @@
-# scaling-robot
+# ideal-happiness
 Basic forecasting workflow of enerhiya.ai
