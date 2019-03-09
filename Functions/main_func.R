@@ -688,6 +688,65 @@ wls <- function(theta, emp_cov1, weights, nug_eff, step, est_param = NULL, meter
   }
 }
 
+data_plots_functions <- function(filename, var1, var2){
+  
+  colfunc <- colorRampPalette(c("blue","yellow","red"))
+  
+  pdf(file=filename, width=20, height=9)
+  
+  zr <- range(c(var1sim, var2sim))
+  
+  split.screen( rbind(c(0.1,0.85,0,1), c(.95,0.99,0,0.98)))
+  screen(1)
+  layout(mat=matrix(1:10, nrow=2, ncol=5, byrow=T))
+  
+  for(bb in 1:5){
+    
+    xx <- findInterval(var1[,bb], sort(c(var1, var2)))
+    
+    if(bb==1){
+      par(pty="s") 
+      par(mai=c(0.4,0.4,0.4,0.4))
+      map("worldHires", xlim = c(range(grid_locations[,1])[1]-1,range(grid_locations[,1])[2]+2), ylim = c(range(grid_locations[,2])[1]-1, range(grid_locations[,2])[2]+2), lwd=0.5)
+      plot(spdf, add=TRUE, pch=16, col=colfunc(length(c(var1, var2)))[xx], lwd=0.5)
+      mtext(expression(Z[1]), side = 2, line = 0, adj = 0.5, cex = 1.5, font=3,col="#0086FF")
+      mtext(paste("t=",bb,sep=""), side = 3, line = 1, adj = 0.5, cex = 1.5, font=2,col="#4EC1DE")
+    }else{
+      par(pty="s") 
+      par(mai=c(0.4,0.4,0.4,0.4))
+      map("worldHires", xlim = c(range(grid_locations[,1])[1]-1,range(grid_locations[,1])[2]+2), ylim = c(range(grid_locations[,2])[1]-1,range(grid_locations[,2])[2]+2), lwd=0.5)
+      plot(spdf, add=TRUE, pch=16, col=colfunc(length(c(var1, var2)))[xx], lwd=0.5)
+      mtext(paste("t=",bb,sep=""), side = 3, line = 1, adj = 0.5, cex = 1.5, font=2,col="#4EC1DE")
+    }
+    
+  }
+  for(bb in 1:5){
+    xx <- findInterval(var2[,bb], sort(c(var1, var2)))
+    
+    if(bb==1){
+      par(pty="s") 
+      par(mai=c(0.4,0.4,0.4,0.4))
+      map("worldHires", xlim = c(range(grid_locations[,1])[1]-1,range(grid_locations[,1])[2]+2), ylim = c(range(grid_locations[,2])[1]-1,range(grid_locations[,2])[2]+2), lwd=0.5)
+      plot(spdf, add=TRUE, pch=16, col=colfunc(length(c(var1, var2)))[xx], lwd=0.5)
+      mtext(expression(Z[2]), side = 2, line = 0, adj = 0.5, cex = 1.5, font=3,col="#0086FF")
+    }else{
+      par(pty="s") 
+      par(mai=c(0.4,0.4,0.4,0.4))
+      map("worldHires", xlim = c(range(grid_locations[,1])[1]-1,range(grid_locations[,1])[2]+2), ylim = c(range(grid_locations[,2])[1]-1,range(grid_locations[,2])[2]+2), lwd=0.5)
+      plot(spdf, add=TRUE, pch=16, col=colfunc(length(c(var1, var2)))[xx], lwd=0.5)
+      axis(1, at=seq(0,1,by=0.2), labels = seq(0,1,by=0.2))
+    }
+  }
+  screen(2)
+  screen(2)
+  x1 <- c(0.3,0.4,0.4,0.3)
+  y1 <- c(0.35,0.35,0.6,0.6)
+  legend.gradient2(cbind(x1,y1),cols = colorRampPalette(colors) (colsteps), title = "", 
+                   limits = seq(-3,3,length.out = 5), cex=1)
+  close.screen( all=TRUE)
+  dev.off()
+}
+
 #---------NONSTATIONARY---------#
 
 empirical_st_cov_nonstationary <- function( data1, data2 = NULL, cross, locations, max_time_lag){
