@@ -13,7 +13,6 @@ source(file=paste(root,"Functions/data_format.R",sep=''))
 source(file=paste(root,"Functions/cov_func.R",sep=''))
 source(file=paste(root,"Functions/toeplitz_mat.R",sep=''))
 source(file=paste(root,"/legend.gradient2.R",sep=''))
-source(file=paste(root,"/covariance_plots_functions.R",sep=''))
 
 
 setwd(paste(root,'Figures',sep=''))
@@ -67,6 +66,9 @@ loc <- grid_locations_UTM[pts,]
 
 dat_analysis <- fitting(coordinates = loc, obs1 = dat1, obs2 = dat2)
 
+# M1: 1054.778611 + 93.481665
+# M2: 3092.138
+# M5: 
 ############################################################################
 ############################################################################
 ########################         APPENDIX           ########################
