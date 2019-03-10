@@ -8,7 +8,7 @@ fitting <- function(coordinates, obs1, obs2 = NULL){
   
   data_matrix <- data_format_into_matrix(data1 = obs1, data2 = obs2, temporal_replicates = ncol(obs1), simulated = F)
   conso_cor <- empirical_st_cov(data1 = t(data_matrix[insample_loc_index, 1:(ncol(data_matrix)/2)]), data2 = t(data_matrix[insample_loc_index, (ncol(data_matrix)/2 + 1):ncol(data_matrix)]), locations = coordinates[insample_loc_index,], max_time_lag = 5, simulated = F)
-  binned <- empirical_covariance_dataframe(data1_cov = var1_cov, data2_cov = var2_cov, cross_cov = cross, simulated = F)
+  binned <- empirical_covariance_dataframe(data_cov = conso_cor)
   
   R <- matrix(c(-1.1339125*cos(116.9811232), -1.1339125*sin(116.9811232), 0.8617141*sin(116.9811232),
                 -0.8617141*cos(116.9811232)), ncol=2, byrow=T)
@@ -23,10 +23,9 @@ fitting <- function(coordinates, obs1, obs2 = NULL){
   hlag <- sqrt(binned[which(binned[,3] == 0), 1]^2 + binned[which(binned[,3] == 0), 2]^2)
   #display plots
   par(mfrow = c(1,3))
-  plot(hlag/1000, binned[which(binned[,3] == 0), 4], pch = 3, ylab='', col = 1, xlab='Spatial Lag (km)', main='', col.main = "#4EC1DE", ylim = c(0,1))
-  plot(hlag/1000, binned[which(binned[,3] == 0), 5], pch = 3, ylab='', col = 1, xlab='Spatial Lag (km)', main='', col.main = "#4EC1DE", ylim = c(0,1))
-  plot(hlag/1000, binned[which(binned[,3] == 0), 6], pch = 3, ylab='', col = 1, xlab='Spatial Lag (km)', main='', col.main = "#4EC1DE", ylim = c(0,1))
-  
+  plot(hlag/1000, binned[which(binned[,3] == 0), 4], pch = 3, ylab='', col = 1, xlab='Spatial Lag (km)', main='', col.main = "#4EC1DE")
+  plot(hlag/1000, binned[which(binned[,3] == 0), 5], pch = 3, ylab='', col = 1, xlab='Spatial Lag (km)', main='', col.main = "#4EC1DE")
+  plot(hlag/1000, binned[which(binned[,3] == 0), 6], pch = 3, ylab='', col = 1, xlab='Spatial Lag (km)', main='', col.main = "#4EC1DE")
 }
 
 empirical_st_cov <- function(data1, data2, locations, max_time_lag, simulated, p = 2){
@@ -121,60 +120,32 @@ empirical_st_cov <- function(data1, data2, locations, max_time_lag, simulated, p
   return(emp)
 }
 
-empirical_covariance_dataframe <- function(data1_cov, data2_cov = NULL, cross_cov = NULL, simulated = F){
+empirical_covariance_dataframe <- function(data_cov){
   
-  if(!simulated == TRUE){
-    empirical_var1 <- data1_cov[[1]]
-    empirical_var2 <- data2_cov[[1]]
-    empirical_var3 <- cross_cov[[1]]
-    
-    binned.1 <- empirical_var1 %>% group_by(xlag, ylag) %>% summarize(avg1=mean(correlation))
-    binned.2 <- empirical_var2 %>% group_by(xlag, ylag) %>% summarize(avg1=mean(correlation))
-    binned.3 <- empirical_var3 %>% group_by(xlag, ylag) %>% summarize(avg1=mean(crosscorrelation))
-    
-    binned_orig <- cbind(binned.1$xlag, binned.1$ylag, rep(0,nrow(binned.1)), binned.1$avg1,
-                         binned.2$avg1, binned.3$avg1)
-    
-    if(length(data1_cov) > 1){
-      for (i in 2:length(data1_cov)){
-        empirical_var1 <- data1_cov[[i]]
-        empirical_var2 <- data2_cov[[i]]
-        empirical_var3 <- cross_cov[[i]]
-        
-        binned.1 <- empirical_var1 %>% group_by(xlag, ylag) %>% summarize(avg1=mean(correlation))
-        binned.2 <- empirical_var2 %>% group_by(xlag, ylag) %>% summarize(avg1=mean(correlation))
-        binned.3 <- empirical_var3 %>% group_by(xlag, ylag) %>% summarize(avg1=mean(crosscorrelation))
-        
-        binned_orig <- rbind(binned_orig,cbind(binned.1$xlag,binned.1$ylag,rep(i-1,nrow(binned.1)),binned.1$avg1,
-                                               binned.2$avg1,binned.3$avg1))
-      }
+  empirical_var1 <- data_cov[[1]]
+  
+  binned.1 <- empirical_var1 %>% group_by(xlag, ylag) %>% summarize(avg1=mean(var1_cor))
+  binned.2 <- empirical_var1 %>% group_by(xlag, ylag) %>% summarize(avg1=mean(var2_cor))
+  binned.3 <- empirical_var1 %>% group_by(xlag, ylag) %>% summarize(avg1=mean(cross_cor))
+  
+  binned_orig <- cbind(binned.1$xlag, binned.1$ylag, rep(0,nrow(binned.1)), binned.1$avg1,
+                       binned.2$avg1, binned.3$avg1)
+  
+  if(length(data_cov) > 1){
+    for (i in 2:length(data_cov)){
+      empirical_var1 <- data_cov[[i]]
+      
+      binned.1 <- empirical_var1 %>% group_by(xlag, ylag) %>% summarize(avg1=mean(var1_cor))
+      binned.2 <- empirical_var1 %>% group_by(xlag, ylag) %>% summarize(avg1=mean(var2_cor))
+      binned.3 <- empirical_var1 %>% group_by(xlag, ylag) %>% summarize(avg1=mean(cross_cor))
+      
+      binned_orig <- rbind(binned_orig,cbind(binned.1$xlag,binned.1$ylag,rep(i-1,nrow(binned.1)),binned.1$avg1,
+                                             binned.2$avg1,binned.3$avg1))
     }
-    colnames(binned_orig) <- c('xlag', 'ylag', 'tlag', 'var1_cor', 'var2_cor', 'cross_cor')
-  }else{
-    empirical_var1 <- data1_cov[[1]]
-    
-    binned.1 <- empirical_var1 %>% group_by(xlag, ylag) %>% summarize(avg1=mean(var1_cor))
-    binned.2 <- empirical_var1 %>% group_by(xlag, ylag) %>% summarize(avg1=mean(var2_cor))
-    binned.3 <- empirical_var1 %>% group_by(xlag, ylag) %>% summarize(avg1=mean(cross_cor))
-    
-    binned_orig <- cbind(binned.1$xlag, binned.1$ylag, rep(0,nrow(binned.1)), binned.1$avg1,
-                         binned.2$avg1, binned.3$avg1)
-    
-    if(length(data1_cov) > 1){
-      for (i in 2:length(data1_cov)){
-        empirical_var1 <- data1_cov[[i]]
-        
-        binned.1 <- empirical_var1 %>% group_by(xlag, ylag) %>% summarize(avg1=mean(var1_cor))
-        binned.2 <- empirical_var1 %>% group_by(xlag, ylag) %>% summarize(avg1=mean(var2_cor))
-        binned.3 <- empirical_var1 %>% group_by(xlag, ylag) %>% summarize(avg1=mean(cross_cor))
-        
-        binned_orig <- rbind(binned_orig,cbind(binned.1$xlag,binned.1$ylag,rep(i-1,nrow(binned.1)),binned.1$avg1,
-                                               binned.2$avg1,binned.3$avg1))
-      }
-    }
-    colnames(binned_orig) <- c('xlag', 'ylag', 'tlag', 'var1_cor', 'var2_cor', 'cross_cor')
   }
+  colnames(binned_orig) <- c('xlag', 'ylag', 'tlag', 'var1_cor', 'var2_cor', 'cross_cor')
   return(binned_orig)
+    
 }
 
 simulation_study <- function(true_param_spatial, true_param_velocity, sim_model, rand_vel, num_sim, max_u, num_variables, location, plot = T, nugget = F){
@@ -694,7 +665,7 @@ data_plots_functions <- function(filename, var1, var2){
   
   pdf(file=filename, width=20, height=9)
   
-  zr <- range(c(var1sim, var2sim))
+  zr <- range(c(var1, var2))
   
   split.screen( rbind(c(0.1,0.85,0,1), c(.95,0.99,0,0.98)))
   screen(1)
