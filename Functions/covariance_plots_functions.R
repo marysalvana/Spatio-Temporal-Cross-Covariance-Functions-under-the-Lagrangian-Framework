@@ -123,7 +123,7 @@ simulation_plots_functions <- function(filename,var1sim,var2sim){
   dev.off()
 }
 
-covariance_plots_functions_section5 <- function(filename,simcov,rotated){
+covariance_plots_functions_section5 <- function(filename, simcov, rotated){
   pdf(paste(filename,sep=''), width=8.7, height=8)
   
   split.screen( rbind(c(0.1,0.93,0.1,1), c(.93,0.99,0.1,1)))
