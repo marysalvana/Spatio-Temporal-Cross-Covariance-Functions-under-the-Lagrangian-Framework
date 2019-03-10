@@ -1,0 +1,453 @@
+\documentclass[12pt]{article}
+\usepackage{epsfig, epsf, graphicx}
+\usepackage{pstricks, pst-node, psfrag}
+\usepackage{amssymb,amsmath,bm}
+\usepackage{verbatim,enumerate}
+\usepackage{rotating, lscape}
+\usepackage{setspace}
+\usepackage{apacite}
+\usepackage{natbib}
+\usepackage{subfig}
+\usepackage{physics}
+\usepackage{color, colortbl}
+\usepackage{tabu}
+\usepackage{xcolor}
+\usepackage[framemethod=default]{mdframed}
+\usepackage{showexpl}
+
+\mdfdefinestyle{exampledefault}{%
+linecolor=black,linewidth=1.5pt,
+middlelinewidth=3pt,rightline=true,innerleftmargin=10,innerrightmargin=10}
+\usepackage{tikz}
+\usepackage{multirow}
+\usepackage{bbm}
+\usetikzlibrary{arrows,calc,tikzmark,shapes,fit,positioning}
+\tikzset{box/.style={draw, rectangle, thick, text centered, minimum height=3em}}
+  \tikzset{line/.style={draw, thick, -latex'}}
+\usepackage{hyperref}
+\usepackage{booktabs}
+\usepackage{float}
+\usepackage{multicol,listings,siunitx}
+\usepackage{caption}
+%\usepackage[square,sort,comma,numbers]{natbib}
+\usepackage{gensymb}
+%\usepackage{adjustbox}
+\setlength{\oddsidemargin}{-0.125in} \setlength{\topmargin}{-0.5in}
+\setlength{\textwidth}{6.5in} \setlength{\textheight}{9in}
+
+\setlength{\textheight}{9in} \setlength{\textwidth}{6.5in}
+\setlength{\topmargin}{-40pt} \setlength{\oddsidemargin}{0pt}
+\setlength{\evensidemargin}{0pt}
+
+\setlength{\textheight}{9.4in} \setlength{\textwidth}{6.8in}
+\setlength{\topmargin}{-71pt} \setlength{\oddsidemargin}{0pt}
+\setlength{\evensidemargin}{-6pt} \tolerance=500
+%\input psfig.tex
+\setlength{\topmargin}{-56pt} \setlength{\oddsidemargin}{-6pt}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\def\wt{\widetilde}
+\def\diag{\hbox{diag}}
+\def\wh{\widehat}
+\def\AIC{\hbox{AIC}}
+\def\BIC{\hbox{BIC}}
+%- Makes the section title start with Appendix in the appendix environment
+\newcommand{\Appendix}
+{%\appendix
+\def\thesection{Appendix~\Alph{section}}
+%\def\thesubsection{\Alph{section}.\arabic{subsection}}
+\def\thesubsection{A.\arabic{subsection}}
+}
+\def\diag{\hbox{diag}}
+\def\bias{\hbox{bias}}
+\def\Siuu{\boldSigma_{i,uu}}
+\def\ANNALS{{\it Annals of Statistics}}
+\def\BIOK{{\it Biometrika}}
+\def\whT{\widehat{\Theta}}
+\def\STATMED{{\it Statistics in Medicine}}
+\def\STATSCI{{\it Statistical Science}}
+\def\JSPI{{\it Journal of Statistical Planning \&amp; Inference}}
+\def\JRSSB{{\it Journal of the Royal Statistical Society, Series B}}
+\def\BMCS{{\it Biometrics}}
+\def\COMMS{{\it Communications in Statistics, Theory \& Methods}}
+\def\JQT{{\it Journal of Quality Technology}}
+\def\STIM{{\it Statistics in Medicine}}
+\def\TECH{{\it Technometrics}}
+\def\AJE{{\it American Journal of Epidemiology}}
+\def\JASA{{\it Journal of the American Statistical Association}}
+\def\CDA{{\it Computational Statistics \& Data Analysis}}
+\def\JCGS{{\it Journal of Computational and Graphical Statistics}}
+\def\JCB{{\it Journal of Computational Biology}}
+\def\BIOINF{{\it Bioinformatics}}
+\def\JAMA{{\it Journal of the American Medical Association}}
+\def\JNUTR{{\it Journal of Nutrition}}
+\def\JCGS{{\it Journal of Computational and Graphical Statistics}}
+\def\LETTERS{{\it Letters in Probability and Statistics}}
+\def\JABES{{\it Journal of Agricultural and
+                      Environmental Statistics}}
+\def\JASA{{\it Journal of the American Statistical Association}}
+\def\ANNALS{{\it Annals of Statistics}}
+\def\JSPI{{\it Journal of Statistical Planning \& Inference}}
+\def\TECH{{\it Technometrics}}
+\def\BIOK{{\it Bio\-me\-tri\-ka}}
+\def\JRSSB{{\it Journal of the Royal Statistical Society, Series B}}
+\def\BMCS{{\it Biometrics}}
+\def\COMMS{{\it Communications in Statistics, Series A}}
+\def\JQT{{\it Journal of Quality Technology}}
+\def\SCAN{{\it Scandinavian Journal of Statistics}}
+\def\AJE{{\it American Journal of Epidemiology}}
+\def\STIM{{\it Statistics in Medicine}}
+\def\ANNALS{{\it Annals of Statistics}}
+\def\whT{\widehat{\Theta}}
+\def\STATMED{{\it Statistics in Medicine}}
+\def\STATSCI{{\it Statistical Science}}
+\def\JSPI{{\it Journal of Statistical Planning \& Inference}}
+\def\JRSSB{{\it Journal of the Royal Statistical Society, Series B}}
+\def\BMCS{{\it Biometrics}}
+\def\COMMS{{\it Communications in Statistics, Theory \& Methods}}
+\def\JQT{{\it Journal of Quality Technology}}
+\def\STIM{{\it Statistics in Medicine}}
+\def\TECH{{\it Technometrics}}
+\def\AJE{{\it American Journal of Epidemiology}}
+\def\JASA{{\it Journal of the American Statistical Association}}
+\def\CDA{{\it Computational Statistics \& Data Analysis}}
+\def\dfrac#1#2{{\displaystyle{#1\over#2}}}
+\def\VS{{\vskip 3mm\noindent}}
+\def\boxit#1{\vbox{\hrule\hbox{\vrule\kern6pt
+          \vbox{\kern6pt#1\kern6pt}\kern6pt\vrule}\hrule}}
+\def\refhg{\hangindent=20pt\hangafter=1}
+\def\refmark{\par\vskip 2mm\noindent\refhg}
+\def\naive{\hbox{naive}}
+\def\itemitem{\par\indent \hangindent2\pahttprindent \textindent}
+\def\var{\hbox{var}}
+\def\cov{\hbox{cov}}
+\def\corr{\hbox{corr}}
+\def\trace{\hbox{trace}}
+\def\refhg{\hangindent=20pt\hangafter=1}
+\def\refmark{\par\vskip 2mm\noindent\refhg}
+\def\Normal{\hbox{Normal}}
+\def\povr{\buildrel p\over\longrightarrow}
+\def\ccdot{{\bullet}}
+\def\bse{\begin{eqnarray*}}
+\def\ese{\end{eqnarray*}}
+\def\be{\begin{eqnarray}}
+\def\ee{\end{eqnarray}}
+\def\bq{\begin{equation}}
+\def\eq{\end{equation}}
+\def\bse{\begin{eqnarray*}}
+\def\ese{\end{eqnarray*}}
+\def\pr{\hbox{pr}}
+\def\CV{\hbox{CV}}
+\def\wh{\widehat}
+\def\trans{^{\rm T}}
+\def\myalpha{{\cal A}}
+\def\th{^{th}}
+
+\definecolor{seagreen}{rgb}{0.18,0.55,0.34}
+\definecolor{lawngreen}{rgb}{0.49,0.99,0}
+\definecolor{lightsalmon}{rgb}{1,0.63,0.48}
+\definecolor{lightyellow}{rgb}{0.99,0.906,0.429}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Marc Definitions
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\renewcommand{\baselinestretch}{1.2} % Change this 1.5 or whatever
+\DeclareMathOperator{\Tr}{tr}
+\newcommand{\qed}{\hfill\hfill\vbox{\hrule\hbox{\vrule\squarebox
+   {.667em}\vrule}\hrule}\smallskip}
+\newcommand{\bbR}{\mathbb{R}}
+\newcommand{\bbX}{\mathbb{X}}
+\newcommand{\bI}{\mathbf{I}}
+\newcommand{\bX}{\mathbf{X}}
+\newcommand{\bY}{\mathbf{Y}}
+\newcommand{\bZ}{\mathbf{Z}}
+\newcommand{\bP}{\mathbf{P}}
+\newcommand{\bR}{\mathbf{R}}
+\newcommand{\bU}{\mathbf{U}}
+\newcommand{\br}{\mathbf{r}}
+\newcommand{\bL}{\mathbf{L}}
+\newcommand{\bW}{\mathbf{W}}
+\newcommand{\bT}{\mathbf{T}}
+\newcommand{\bx}{\mathbf{x}}
+\newcommand{\bz}{\mathbf{z}}
+\newcommand{\bs}{\mathbf{s}}
+\newcommand{\bu}{\mathbf{u}}
+\newcommand{\bmu}{\mathbf{\mu}}
+\newcommand{\bdelta}{\mathbf{\delta}}
+\newcommand{\bepsilon}{\boldsymbol{\epsilon}}
+\newcommand{\balpha}{\boldsymbol{\alpha}}
+\newcommand{\bbeta}{\boldsymbol{\beta}}
+\newcommand{\btheta}{\boldsymbol{\theta}}
+\newcommand{\bLambda}{\boldsymbol{\Lambda}}
+\newcommand{\bSigma}{\boldsymbol{\Sigma}}
+\newcommand{\0}{\mathbf{0}}
+\newtheorem{defi}{Definition}
+%\theoremstyle{plain}
+\newtheorem{theo}{Theorem}
+\newtheorem{corollary}{Corollary}
+\newtheorem{prop}{Proposition}
+\newtheorem{lem}{Lemma}
+%\theoremstyle{remark}
+\newtheorem{rem}{Remark}
+\newtheorem{proof}{Proof}
+
+% \renewcommand{\baselinestretch}{1.25}
+\pagenumbering{arabic}
+
+
+\begin{document}
+
+\thispagestyle{empty} \baselineskip=28pt \vskip 5mm
+\begin{center} {\Large{\bf Supplementary Material to Accompany Spatio-Temporal Cross-Covariance Functions under the Lagrangian Framework}}
+	
+\end{center}
+
+\baselineskip=12pt \vskip 10mm
+
+\begin{center}\large
+Mary Lai O. Salva\~{n}a, Amanda Lenzi, and Marc G.~Genton\footnote[1]{
+\baselineskip=10pt Statistics Program, King Abdullah University of Science and Technology (KAUST), Thuwal 23955-6900, Saudi Arabia\\
+E-mail: marylai.salvana@kaust.edu.sa, amanda.lenzi@kaust.edu.sa, and marc.genton@kaust.edu.sa\\
+This research was supported by the King Abdullah University of Science and Technology (KAUST).}
+\end{center}
+
+\baselineskip=17pt \vskip 10mm \centerline{\today} \vskip 15mm
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\baselineskip=26pt
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Estimation}
+
+This section presents some additional definitions needed in calculating multi-step WLS.
+
+The empirical purely spatial stationary cross-covariance function at spatial lag $\mathbf{h}_k$, $k \in K$ is defined as
+\begin{equation}
+\widehat{C}_{ij}(\mathbf{h}_k,0)=\frac{1}{|N(\mathbf{h}_k)|}\frac{1}{|T|}\sum_{N(\mathbf{h}_k)}\sum_{t\in T}\left(Z_{i,t}(\mathbf{s}_a)-\bar{Z}_{i,t}\right)\left(Z_{j,t}(\mathbf{s}_b)-\bar{Z}_{j,t}\right),
+\label{empirical_spatial_covariance}
+\end{equation}
+where $\bar{Z}_{i,t}=\frac{1}{N}\sum_{a=1}^{N} Z_{i,t}(\mathbf{s}_a),$ $i=1,\ldots,p$, is an estimator of the constant mean, $N$ is the total number of spatial observations, and $T$ and $|T|$ are the set of temporal replicates and its cardinality. Here $|N(\mathbf{h}_k)|$ counts the number of elements in $N(\mathbf{h}_k)$ where $N(\mathbf{h}_k)=\left\{\mathbf{s}_a,\mathbf{s}_b: \mathbf{s}_a-\mathbf{s}_b =\mathbf{h}_k \right\}$.
+
+The empirical spatio-temporal stationary cross-covariance function at spatio-temporal lag $(\mathbf{h}_k,u_l)$, $k \in K,\;l\in L$ is defined as
+
+\begin{equation}\label{eqn:empirical_covariance}
+\widehat{C}_{ij}(\mathbf{h}_k,u_l)=\frac{1}{|N(\mathbf{h}_k,u_l)|}\sum_{N(\mathbf{h}_k,u_l)}\left\{Z_{i}(\mathbf{s}_a,t_a)-\bar{Z}_{i}\right\}\left\{Z_{j}(\mathbf{s}_b,t_b)-\bar{Z}_{j}\right\},
+\end{equation}
+where $\bar{Z}_{i}=\frac{1}{n}\sum_{a=1}^{n} Z_i(\mathbf{s}_a,t_a),$ $i=1,\ldots,p$, is an estimator of the constant mean and $n$ is the total number of spatio-temporal locations. Here $|N(\mathbf{h}_k,u_l)|$ counts the number of elements in $N(\mathbf{h}_k,u_l)$ where $N(\mathbf{h}_k,u_l)=\left\{(\mathbf{s}_a,t_a),(\mathbf{s}_b,t_b): \mathbf{s}_a-\mathbf{s}_b =\mathbf{h}_k, t_a-t_b =u_l \right\}$. Here the sets $K$ and $L$ control for which spatial and temporal lags, $\mathbf{h}$ and $u$, are included in the computation of the objective function. Ideally, it should include all lags $\mathbf{h}$ and $u$ for which there is non-negligible dependence and some for which there is negligible dependence. 
+
+\begin{figure}[tb!]
+ \centering
+ \subfloat[M1/M2 Purely Spatial Parameter Estimates]{\includegraphics[scale=0.22]{m2_wls_spatial.png}}%
+ \quad
+    \subfloat[M1 Advection Velocity Vector Estimates]{\includegraphics[scale=0.25]{m1_wls_spatial.png}}%
+    \quad
+    \subfloat[M2 Advection Velocity Vector Estimates]{\includegraphics[scale=0.18]{m2_wls_velocity.png}}%
+    \quad
+    \subfloat[M3 Parameter Estimates]{\includegraphics[scale=0.16]{m3_wls.png}}%
+     \caption{\small Parameter estimates under multi-step WLS. The advection velocity vector estimates in (c) are in $\times 10^3$ km.}
+    \label{fig:wls_spatial}
+\end{figure}
+
+In Figure \ref{fig:wls_spatial} below, we show that the parameters of our proposed models M1, M2, and M3, can be efficiently recovered using multi-step WLS. The simulation study mimics the conditions found in the analysis of the bivariate PM dataset in Saudi Arabia as detailed in Section 5 of the paper and the true parameter values are set to be equal to the estimated values on Table 1 below. We simulate 100 times from each models M1, M2, and M3 and fit each model to its corresponding simulated dataset. From Figure \ref{fig:wls_spatial}, we can see that the median values of the parameter estimates are very close to the true values of the parameters. Hence, multi-step WLS is indeed an efficient estimation method.
+
+\section{Goodness-of-Fit}
+In Section 5 of the paper we fit five different spatio-temporal stationary cross-covariance functions to a bivariate pollutant dataset in Saudi Arabia, three of which were proposed in Section 2 and the other two are benchmark spatio-temporal stationary cross-covariance functions in the literature. To evaluate the predictive performance of the competing models, we establish some criteria by which we choose the best model among them. The Akaike Information Criterion (AIC) and Bayesian Information Criterion (BIC) are two of the most widely used criterion for model selection. They take into account the trade-off between goodness-of-fit and model complexity. However, AIC and BIC are not defined for WLS estimation since these two rely on the evaluation of the likelihood of the multivariate spatio-temporal stationary random field. Hence we turn to other estimation criteria. The predictive performances of the five models are compared using an in-sample prediction score, which is simply the value of the objective function $\mathbf{Q}(\boldsymbol{\theta})$, and three out-of-sample prediction scores: Root Mean Square Error (RMSE), Continuous Rank Probability Score (CRPS), and Weighted AIC (WAIC).  The RMSE is the square root of the MSE, where MSE is the mean square error (MSE) defined as follows:
+\begin{equation*}
+\text{MSE}=\frac{1}{|T|\check{N}p }\sum_{t\in T}\sum_{j=1}^{\check{N}p}\left(\tilde{z}_{j}^{t}-z_{j}^t\right)^2,
+\end{equation*}
+where $\check{N}$ is the number of spatial locations held out for validation, $p$ is the number of variables and the sum is taken over the set of all testing temporal locations $T$ such that $|T|$ denotes the cardinality of the set $T$. Here $\tilde{z}_{j}^t$ is the predicted value of the spatio-temporal observation while $z_j^t,\;j=1,\ldots,\check{N}p,\; t\in T$, is the realized or true value of the spatio-temporal observation. The CRPS is defined as 
+\begin{equation*}
+\text{CRPS}(F,z)=\int_{-\infty}^{\infty}\left\{F(y)-\mathbbm{1}(y\geq z)\right\}^2\dd y,
+\end{equation*}
+where $F$ is the cumulative predictive distribution function, $\mathbbm{1}(\cdot)$ is the indicator function, and $z$ is the realized value. We take the mean CRPS for all spatio-temporal prediction points. In addition to RMSE and CRPS, we use another variant of the AIC which is defined for WLS estimation, (Banks and Joyner, 2017) . We adopt a similar form tailored to our application:
+\begin{equation*}
+\text{WAIC}=|T|\check{N}p \ln \left\{ \frac{1}{|T|\check{N}p} \sum_{t\in T}\sum_{j=1}^{\check{N}p}\left(\tilde{z}_{j}^{t}-z_{j}^t\right)^2 \right\}+2(p+1).
+\end{equation*}
+The scores defined above are computed for each model. The lower the scores, the better the model fits the data.
+
+\section{Application}
+
+\begin{figure}[H]
+ \centering
+\includegraphics[scale=0.35]{data.pdf}
+    \caption{\small Spatial stationarity exhibited by the bivariate PM dataset.}
+    \label{fig:data}
+\end{figure}
+
+\section{Results}
+
+Below is the summary of parameter estimates of the different models fitted to the bivariate PM dataset in Saudi Arabia.
+
+\begin{center}
+\begin{table}[H]
+\centering
+\caption{\small Parameter estimates under different models. We also fit a nugget effect to each variable.}
+
+\caption*{\small Spatial Parameters}
+\scalebox{0.8}{
+\begin{tabular}{ccccccccccccccc} 
+\toprule
+Model &  & $\hat{\nu}_{11}$ & $\hat{\nu}_{22}$ & $\hat{a}$ & $\hat{\rho}_{12}$ & $\hat{\sigma}_1^2$ & $\hat{\sigma}_2^2$ & $\hat{\tau}_1$ & $\hat{\tau}_2$ & $\hat{\boldsymbol{\kappa}}$ (km) & $\hat{\tilde{a}}_1$& $\hat{\tilde{a}}_2$ & $\hat{\mathbf{A}}$ \\
+ \midrule
+M1/M2 & &  3.218 & 3.736 & 794.8 & 0.59 & 1 & 1 & 0  &  0& $(704.4, 205.7)^T$ &- &- &- \\ 
+M3 & & 18.81 &  2.299 & -  & - & 1 & 1 & 0  & 0 & -&  281.6 & 1111  &$\left(\protect\begin{matrix}0.838 & 0.545\\
+0 & 0.999\protect\end{matrix}\right)$ \\
+M4 & & 3.757 & 4.394 & 723.9 & 0.55 & 1 & 1& 0& 0&- &- &-&-\\ 
+M5 & & 3.218 & 3.736 & 794.8 & 0.52 & 1 & 1& 0& 0&- &- &- &-\\   %-126.1124  -58.4599
+    \bottomrule   
+    \end{tabular}
+}
+\bigskip
+\caption*{\small Temporal Parameters}
+\scalebox{0.8}{
+\begin{tabular}{cccccccccccc}
+\toprule
+\multirow{4}{*}{} Model & &  {$\hat{\alpha}$} & {$\hat{b}$} & $\hat{\Lambda}$  & {$\hat{c}$} &{$\hat{\psi}$} &$\hat{\gamma}_1$& $\hat{\gamma}_2$& $\hat{\theta}_1$ & $\hat{\theta}_2$ \\
+ \midrule
+M1 & & - & - & -  & - & -& -  & -& -& -\\
+M2 & & - & - & - & - & - & - & -  & 0.704  &   0.444 \\
+M3 & & - & - & -& -  & - & - & - &-   &- \\
+M4 & & 0.999 & 0.936 & 0.001 & 1948 & 5.846 & 0.499 & 0.674 & - & - \\
+M5 & &  0.999 & 0.947 &- & - & -& -&- & - & - \\
+\end{tabular}
+}
+\label{tab:estimates}
+\medskip
+
+\scalebox{0.8}{
+\begin{tabular}{ccccccccccccccccccc}
+\toprule
+\multirow{4}{*}{} Model & & $\hat{\tilde{\mathbf{v}}}_1$ (km) & $\hat{\tilde{\mathbf{v}}}_2$ (km) &  {$\hat{\mathbf{v}}$} (km) & {$\hat{\boldsymbol{\mu}}$} (km) & {$\hat{\boldsymbol{\Sigma}}$}  (km)  \\
+ \midrule
+M1 & &- & - & - &$(-596.9,  -75.26)^T$   & $\left(\protect\begin{matrix} 1681 & 1097\\
+    1097& 5152\protect\end{matrix}\right)$ \\
+M2 & &  - & - & $(-497.4,  -39.63)^T$& - & -  \\ %3.8938402  3.5194711  0.5246596 -0.4540926  0.3932884
+M3 & & $(-2600,  -661.2)^T$ & $(3604,  1947)^T$ & - & - & -  \\
+M4 & & - & - & $(-839.9, 747.9)^T$  & - &- \\ 
+M5 & & - & - & -  & - & -&\\  
+ \bottomrule  
+\end{tabular}
+} 
+  \end{table}
+\end{center}
+
+
+\section{Complete Proofs}
+
+\begin{proof}[Proposition 1]
+We want to show that if $\mathbf{V}\sim\mathcal{N}_d\left(\boldsymbol{\mu},\boldsymbol{\Sigma}\right)$ and $C^S(\mathbf{h})$ is the univariate Mat\'{e}rn, then $C(\mathbf{h},u)=E_{\mathbf{V}}\left\{C^S(\mathbf{h-V}u)\right\}$ has a semi-explicit form:
+\begin{multline*}
+C(\mathbf{h},u)=\frac{2^{d/2}}{ \Gamma(\nu)a^{d}} \int_0^{\infty}z^{\nu+d/2-1} \exp\left(-z\right)\Big|u^2\boldsymbol{\Sigma}+\frac{2z}{a^2}\mathbf{I}_{d}\Big|^{-1/2}\\
+\times \exp\left\{-\frac{1}{2}(\mathbf{h}-u\boldsymbol{\mu})^T\left(u^2\boldsymbol{\Sigma}+\frac{2z}{a^2}\mathbf{I}_{d}\right)^{-1}(\mathbf{h}-u\boldsymbol{\mu})\right\}\dd z. 
+\end{multline*}
+
+\begingroup
+\allowdisplaybreaks
+
+It is well-known that $C(\mathbf{h},u)$ can be expressed as $C(\mathbf{h},u)=\int \exp\left\{i\left(\mathbf{h}^T\boldsymbol{\omega}-u\tau\right) \right\} f(\boldsymbol{\omega},\tau)\dd \boldsymbol{\omega}\dd\tau $, where $f(\boldsymbol{\omega},\tau)$ is called the spectral density of $C(\mathbf{h},u)$ and $\int | f(\boldsymbol{\omega},\tau)|\dd\boldsymbol{\omega}\dd\tau <\infty$. To get the semi-explicit form above, it is easier to work with the spectral density of the univariate Mat\'{e}rn. First, we derive the spectral density of any Lagrangian covariance function. Let $\tilde{\mathbf{h}}=\mathbf{h}-u\mathbf{v}$. Then,
+\begin{eqnarray*}
+f(\boldsymbol{\omega},\tau)  &=& \frac{1}{(2\pi)^{d+1}} \int_{\mathbb{R}} \int_{\mathbb{R}^d} \exp \left\{-i\left(\mathbf{h}^T\boldsymbol{\omega}-u\tau\right) \right\} C(\mathbf{h}-u\mathbf{v}) \dd\mathbf{h}\dd u \nonumber \\
+&=&  \frac{1}{2\pi} \int_{\mathbb{R}}\exp\left(iu\tau\right)\exp\left(-i\boldsymbol{\omega}^T\mathbf{v}u\right)\frac{1}{(2\pi)^d}\int_{\mathbb{R}^d} \exp\left(-i\tilde{\mathbf{h}}^T\boldsymbol{\omega}\right) C(\tilde{\mathbf{h}}) \dd \tilde{\mathbf{h}}\dd u \nonumber\\
+&=&\frac{1}{2\pi} \int_{\mathbb{R}} \exp\left\{iu\left(\tau-\boldsymbol{\omega}^T\mathbf{v}\right) \right\}f(\boldsymbol{\omega},0)\dd u \nonumber \\
+&=&\frac{1}{2\pi} f(\boldsymbol{\omega})\int_{\mathbb{R}} \exp\left\{iu\left(\tau-\boldsymbol{\omega}^T\mathbf{v}\right) \right\}\dd u \nonumber
+\end{eqnarray*}
+\begin{eqnarray}
+E_{\mathbf{V}}\left\{f(\boldsymbol{\omega},\tau)\right\}&=&\frac{1}{2\pi} f(\boldsymbol{\omega})  \int_{\mathbb{R}} E_{\mathbf{V}}\left[\exp\left\{iu\left(\tau-\boldsymbol{\omega}^T\mathbf{V}\right) \right\}\right]\dd u \nonumber \\
+&=&\frac{1}{2\pi} f(\boldsymbol{\omega})  \int_{\mathbb{R}} \exp(iu\tau)E_{\mathbf{V}}\left\{\exp\left(-iu\boldsymbol{\omega}^T\mathbf{V}\right) \right\}\dd u \nonumber \\
+&=&\frac{1}{2\pi} f(\boldsymbol{\omega})  \int_{\mathbb{R}} \exp(iu\tau) \exp\left(-iu\boldsymbol{\omega}^T\boldsymbol{\mu}-\frac{1}{2}u^2\boldsymbol{\omega}^T\boldsymbol{\Sigma}\boldsymbol{\omega}\right) \dd u\label{eqn:gaussianfouriertransform}\\
+&=&\frac{1}{2\pi}\frac{\Gamma(\nu+d/2)}{ \Gamma(\nu)\pi^{d/2}a^{d}} \textcolor{magenta}{\frac{1}{\left(1+\frac{\|\boldsymbol{\omega}\|^2}{a^2}\right)^{\nu+d/2}}}  \int_{\mathbb{R}} \exp(iu\tau) \exp\left(-iu\boldsymbol{\omega}^T\boldsymbol{\mu}-\frac{1}{2}u^2\boldsymbol{\omega}^T\boldsymbol{\Sigma}\boldsymbol{\omega}\right) \dd u  \nonumber \\
+&&  \label{eqn:gneitingspectraldensitymatern}  \\
+&=&\frac{1}{2\pi}\frac{\Gamma(\nu+d/2)}{ \Gamma(\nu)\pi^{d/2}a^{d}} \textcolor{magenta}{\frac{1}{\Gamma(\nu+d/2)}\int_0^{\infty}z^{\nu+d/2-1} \exp\left\{-\left(1+\frac{ \|\boldsymbol{\omega}\|^2}{a^2}\right)z\right\}\dd z}\nonumber \\
+&&\times  \int_{\mathbb{R}} \exp(iu\tau) \exp\left(-iu\boldsymbol{\omega}^T\boldsymbol{\mu}-\frac{1}{2}u^2\boldsymbol{\omega}^T\boldsymbol{\Sigma}\boldsymbol{\omega}\right) \dd u 
+\label{eqn:rational_function_integral_form} \\
+&=&\frac{1}{ \Gamma(\nu)\pi^{d/2}a^{d}} \int_0^{\infty}z^{\nu+d/2-1} \exp\left\{-\left(1+\frac{ \|\boldsymbol{\omega}\|^2}{a^2}\right)z\right\}\dd z\nonumber \\
+&&\times \textcolor{red}{\frac{(\boldsymbol{\omega}^T\boldsymbol{\Sigma}\boldsymbol{\omega})^{1/2}}{(\boldsymbol{\omega}^T\boldsymbol{\Sigma}\boldsymbol{\omega})^{1/2}}}\frac{1}{2\pi} \int_{\mathbb{R}} \exp\left\{iu(\tau-\boldsymbol{\omega}^T\boldsymbol{\mu})-\frac{1}{2}u^2\boldsymbol{\omega}^T\boldsymbol{\Sigma}\boldsymbol{\omega}\right\} \dd u  \nonumber \\
+&=&\frac{1}{ \Gamma(\nu)\pi^{d/2}a^{d}} \int_0^{\infty}z^{\nu+d/2-1} \exp\left\{-\left(1+\frac{ \|\boldsymbol{\omega}\|^2}{a^2}\right)z\right\}\dd z\nonumber \\
+&& \times \frac{1}{(\boldsymbol{\omega}^T\boldsymbol{\Sigma}\boldsymbol{\omega})^{1/2}(2\pi)^{1/2}}\textcolor{magenta}{\frac{(\boldsymbol{\omega}^T\boldsymbol{\Sigma}\boldsymbol{\omega})^{1/2}}{(2\pi)^{1/2}} \int_{\mathbb{R}} \exp\left\{iu(\tau-\boldsymbol{\omega}^T\boldsymbol{\mu})-\frac{1}{2}u^2\boldsymbol{\omega}^T\boldsymbol{\Sigma}\boldsymbol{\omega}\right\} \dd u } \label{eqn:CFofGaussian1} \\
+&=&\frac{1}{ \Gamma(\nu)\pi^{d/2}a^{d}} \int_0^{\infty}z^{\nu+d/2-1} \exp\left\{-\left(1+\frac{ \|\boldsymbol{\omega}\|^2}{a^2}\right)z\right\} \dd z \nonumber \\
+&&\times \frac{1}{(\boldsymbol{\omega}^T\boldsymbol{\Sigma}\boldsymbol{\omega})^{1/2}(2\pi)^{1/2}} \textcolor{magenta}{ \exp\left\{i(\tau-\boldsymbol{\omega}^T\boldsymbol{\mu})0-\frac{1}{2}(\tau-\boldsymbol{\omega}^T\boldsymbol{\mu})(\boldsymbol{\omega}^T\boldsymbol{\Sigma}\boldsymbol{\omega})^{-1}(\tau-\boldsymbol{\omega}^T\boldsymbol{\mu})\right\}}  \nonumber \\
+&=&\frac{1}{ \Gamma(\nu)\pi^{d/2}a^{d}} \int_0^{\infty}z^{\nu+d/2-1} \exp\left\{-\left(1+\frac{ \|\boldsymbol{\omega}\|^2}{a^2}\right)z\right\} \dd z \nonumber \\
+&& \times \frac{1}{(\boldsymbol{\omega}^T\boldsymbol{\Sigma}\boldsymbol{\omega})^{1/2}(2\pi)^{1/2}} \exp\left\{-\frac{1}{2}(\tau-\boldsymbol{\omega}^T\boldsymbol{\mu})(\boldsymbol{\omega}^T\boldsymbol{\Sigma}\boldsymbol{\omega})^{-1}(\tau-\boldsymbol{\omega}^T\boldsymbol{\mu})\right\} , \nonumber 
+\end{eqnarray}
+where the following formulas are used:
+\begin{itemize}
+\item (\ref{eqn:gaussianfouriertransform}): characteristic function of a multivariate Gaussian
+\item (\ref{eqn:gneitingspectraldensitymatern}): Mat\'{e}rn spectral density
+\item (\ref{eqn:rational_function_integral_form}) is the formula in Equation (15) of \citet{chetalova2015portfolio}
+\begin{equation*}
+\frac{1}{b^{\eta}}=\frac{1}{\Gamma(\eta)}\int_{0}^{\infty}z^{\eta-1}\exp\left(-bz\right)\dd z,
+\end{equation*} 
+where $\eta=\nu+d/2$ and $b=\frac{ \|\boldsymbol{\omega}\|^2}{a^2}$.
+\item (\ref{eqn:CFofGaussian1}): characteristic function of a univariate normal random variable $U$, i.e., $E\left[\exp\left\{iU(\tau-\boldsymbol{\omega}^T\boldsymbol{\mu})\right\}\right]$ where $U\sim \mathcal{N}_1\left\{0, (\boldsymbol{\omega}^T\boldsymbol{\Sigma}\boldsymbol{\omega})^{-1}\right\}$
+\end{itemize}
+
+Taking the inverse Fourier transform to get $E_{\mathbf{V}}\left\{C\left(\mathbf{h}-u\mathbf{V}\right)\right\}$, we have
+\begin{small}
+\begin{eqnarray}
+&&\int_{\mathbb{R}^{d+1}} \exp \left\{i\left(\mathbf{h}^T\boldsymbol{\omega}-u\tau\right)\right\}\frac{1}{ \Gamma(\nu)\pi^{d/2}a^{d}} \int_0^{\infty}z^{\nu+d/2-1} \exp\left\{-\left(1+\frac{ \|\boldsymbol{\omega}\|^2}{a^2}\right)z\right\}\dd z \nonumber \\
+&&\times  \frac{1}{(\boldsymbol{\omega}^T\boldsymbol{\Sigma}\boldsymbol{\omega})^{1/2}(2\pi)^{1/2}} \exp\left\{-\frac{1}{2}(\tau-\boldsymbol{\omega}^T\boldsymbol{\mu})(\boldsymbol{\omega}^T\boldsymbol{\Sigma}\boldsymbol{\omega})^{-1}(\tau-\boldsymbol{\omega}^T\boldsymbol{\mu})\right\} \dd \boldsymbol{\omega} \dd \tau \nonumber \\
+&=&\frac{1}{ \Gamma(\nu)\pi^{d/2}a^{d}} \int_0^{\infty}z^{\nu+d/2-1} \exp\left(-z\right) \nonumber \\
+&& \times \int_{\mathbb{R}^d}  \exp \left\{i\left(\mathbf{h}^T\boldsymbol{\omega}-u\tau\right)\right\}\frac{1}{(\boldsymbol{\omega}^T\boldsymbol{\Sigma}\boldsymbol{\omega})^{1/2}(2\pi)^{1/2}} \exp\left\{-\frac{1}{2}(\tau-\boldsymbol{\omega}^T\boldsymbol{\mu})(\boldsymbol{\omega}^T\boldsymbol{\Sigma}\boldsymbol{\omega})^{-1}(\tau-\boldsymbol{\omega}^T\boldsymbol{\mu})-\frac{ z\|\boldsymbol{\omega}\|^2}{a^2}\right\}  \dd \tau \dd \boldsymbol{\omega}  \dd z\nonumber \\
+&=&\frac{1}{ \Gamma(\nu)\pi^{d/2}a^{d}} \int_0^{\infty}z^{\nu+d/2-1} \exp\left(-z\right)\int_{\mathbb{R}^d}  \exp\left(i\mathbf{h}^T\boldsymbol{\omega}\right)  \nonumber \\
+&& \times \textcolor{magenta}{\int_{\mathbb{R}}\exp \left(-iu\tau\right) \frac{1}{(\boldsymbol{\omega}^T\boldsymbol{\Sigma}\boldsymbol{\omega})^{1/2}(2\pi)^{1/2}} \exp\left\{-\frac{1}{2}(\tau-\boldsymbol{\omega}^T\boldsymbol{\mu})(\boldsymbol{\omega}^T\boldsymbol{\Sigma}\boldsymbol{\omega})^{-1}(\tau-\boldsymbol{\omega}^T\boldsymbol{\mu})\right\}  \dd \tau} \exp\left(-\frac{ z\|\boldsymbol{\omega}\|^2}{a^2}\right)  \dd \boldsymbol{\omega}  \dd z\label{eqn:CFoftau} \\
+&=&\frac{1}{ \Gamma(\nu)\pi^{d/2}a^{d}} \int_0^{\infty}z^{\nu+d/2-1} \exp\left(-z\right)\int_{\mathbb{R}^d}  \exp\left(i\mathbf{h}^T\boldsymbol{\omega}\right) \textcolor{magenta}{ \exp\left\{-iu\boldsymbol{\omega}^T\boldsymbol{\mu}-\frac{1}{2}u^2(\boldsymbol{\omega}^T\boldsymbol{\Sigma}\boldsymbol{\omega})\right\}} \exp\left(-\frac{ z\|\boldsymbol{\omega}\|^2}{a^2}\right)  \dd \boldsymbol{\omega}  \dd z \nonumber \\
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+&=&\frac{1}{ \Gamma(\nu)\pi^{d/2}a^{d}}\int_0^{\infty}z^{\nu+d/2-1} \exp\left(-z\right) \textcolor{red}{\frac{2^{d/2}}{2^{d/2}}\frac{|u^2\boldsymbol{\Sigma}+\frac{2z}{a^2}\mathbf{I}_{d}|^{1/2}}{|u^2\boldsymbol{\Sigma}+\frac{2z}{a^2}\mathbf{I}_{d}|^{1/2}}} \nonumber \\
+&&\times \int_{\mathbb{R}^d}  \exp \left(i(\mathbf{h}-u\boldsymbol{\mu})^T\boldsymbol{\omega}\right) \exp\left\{-\frac{1}{2}\boldsymbol{\omega}^T\left(u^2\boldsymbol{\Sigma}+\frac{2z}{a^2}\mathbf{I}_{d}\right)\boldsymbol{\omega}\right\} \dd \boldsymbol{\omega} \dd z\nonumber \\
+&=&\frac{2^{d/2}}{ \Gamma(\nu)a^{d}}\int_0^{\infty}z^{\nu+d/2-1} \exp\left(-z\right)\Big|u^2\boldsymbol{\Sigma}+\frac{2z}{a^2}\mathbf{I}_{d}\Big|^{-1/2}\nonumber \\
+&&\times \textcolor{magenta}{\frac{|u^2\boldsymbol{\Sigma}+\frac{2z}{a^2}\mathbf{I}_{d}|^{1/2}}{(2\pi)^{d/2}}\int_{\mathbb{R}^d}  \exp \left(i(\mathbf{h}-u\boldsymbol{\mu})^T\boldsymbol{\omega}\right) \exp\left\{-\frac{1}{2}\boldsymbol{\omega}^T\left(u^2\boldsymbol{\Sigma}+\frac{2z}{a^2}\mathbf{I}_{d}\right)\boldsymbol{\omega}\right\} \dd \boldsymbol{\omega}} \dd z \label{eqn:CFofGaussian}  \\
+&=&\frac{2^{d/2}}{ \Gamma(\nu)a^{d}} \int_0^{\infty}z^{\nu+d/2-1} \exp\left(-z\right)\Big|u^2\boldsymbol{\Sigma}+\frac{2z}{a^2}\mathbf{I}_{d}\Big|^{-1/2} \nonumber \\
+&&\times\textcolor{magenta}{ \exp\left\{i(\mathbf{h}-u\boldsymbol{\mu})^T\mathbf{0}-\frac{1}{2}(\mathbf{h}-u\boldsymbol{\mu})^T\left(u^2\boldsymbol{\Sigma}+\frac{2z}{a^2}\mathbf{I}_{d}\right)^{-1}(\mathbf{h}-u\boldsymbol{\mu})\right\}}\dd z   \nonumber \\
+&=&\frac{2^{d/2}}{ \Gamma(\nu)a^{d}} \int_0^{\infty}z^{\nu+d/2-1} \exp\left(-z\right)\Big|u^2\boldsymbol{\Sigma}+\frac{2z}{a^2}\mathbf{I}_{d}\Big|^{-1/2}\exp\left\{-\frac{1}{2}(\mathbf{h}-u\boldsymbol{\mu})^T\left(u^2\boldsymbol{\Sigma}+\frac{2z}{a^2}\mathbf{I}_{d}\right)^{-1}(\mathbf{h}-u\boldsymbol{\mu})\right\}\dd z, \nonumber\\ \label{eqn:CFofGaussian2}
+\end{eqnarray}
+\end{small}
+where the highlighted expression in (\ref{eqn:CFofGaussian}) is the characteristic function of a multivariate normal random variable, i.e., $E\left[\exp\left\{i(\mathbf{h}-u\boldsymbol{\mu})^T\boldsymbol{\omega}\right\}\right]$ where $\boldsymbol{\omega}\sim \mathcal{N}_d\left\{\mathbf{0}, \left(u^2\boldsymbol{\Sigma}+\frac{2z}{a^2}\mathbf{I}_{d}\right)^{-1}\right\}$.
+$\hfill \Box$
+
+When $\mathbf{V}=\mathbf{v}$, we retrieve the univariate Mat\'{e}rn covariance function with a Lagrangian shift as follows:
+\begin{eqnarray*}
+\frac{1}{ \Gamma(\nu)} \int_0^{\infty}z^{\nu-1} \exp\left(-z\right) \exp\left\{-\frac{a^2}{4z}(\mathbf{h}-u\mathbf{v})^T(\mathbf{h}-u\mathbf{v})\right\}\dd z, 
+\end{eqnarray*}
+where the integral above is the integral form of the Bessel function of the second kind found in Gradshteyn
+and Ryzhik (1965, Sec. 3.471, Equation (9)).\nocite{gradshteyn2014table} Thus, we have 
+\begin{multline*}
+\frac{2}{ \Gamma(\nu)} \left\{\frac{a^2}{4}(\mathbf{h}-u\mathbf{v})^T(\mathbf{h}-u\mathbf{v})\right\}^{\nu/2}\mathcal{K}_{\nu}\left\{2\sqrt{\frac{a^2(\mathbf{h}-u\mathbf{v})^T(\mathbf{h}-u\mathbf{v})}{4}}\right\}\\
+=\frac{2^{1-\nu}}{ \Gamma(\nu)} \left(a\|\mathbf{h}-u\mathbf{v}\|\right)^{\nu}\mathcal{K}_{\nu}\left(a\|\mathbf{h}-u\mathbf{v}\|\right).
+\end{multline*}
+$\hfill \Box$
+\end{proof}
+\endgroup
+
+\begin{proof}[Proposition 2]
+\begingroup
+\allowdisplaybreaks
+The multivariate version of the spectral density of Lagrangian parsimonious multivariate Mat\'{e}rn has the form:
+\begin{eqnarray}
+E_{\mathbf{V}}\left\{f_{ij}(\boldsymbol{\omega},u)\right\} &=&  f_{ij}(\boldsymbol{\omega}) \exp\left(-iu\boldsymbol{\omega}^T\boldsymbol{\mu}-\frac{1}{2}u^2\boldsymbol{\omega}^T\boldsymbol{\Sigma}\boldsymbol{\omega}\right) \nonumber\\
+&=&\frac{\Gamma\left(\nu_{ij}+\frac{d}{2}\right)}{\Gamma\left(\nu_{ij}\right)\pi^{d/2}a_{ij}^{d}} \frac{1}{\left(1+\frac{\|\boldsymbol{\omega}\|^2}{a_{ij}^2}\right)^{\nu_{ij}+d/2}} \exp\left(-iu\boldsymbol{\omega}^T\boldsymbol{\mu}-\frac{1}{2}u^2\boldsymbol{\omega}^T\boldsymbol{\Sigma}\boldsymbol{\omega}\right)  \nonumber\\
+&=&\frac{\Gamma\left(\nu_{ij}+\frac{d}{2}\right)}{\Gamma\left(\nu_{ij}\right)\pi^{d/2}a_{ij}^{d}}\frac{1}{\Gamma\left(\nu_{ij}+\frac{d}{2}\right)}\int_0^{\infty}z^{\nu_{ij}+d/2-1} \exp\left\{-\left(1+\frac{ \|\boldsymbol{\omega}\|^2}{a_{ij}^2}\right)z\right\}\dd z  \nonumber \\
+&&\times \exp\left(-iu\boldsymbol{\omega}^T\boldsymbol{\mu}-\frac{1}{2}u^2\boldsymbol{\omega}^T\boldsymbol{\Sigma}\boldsymbol{\omega}\right). \nonumber
+\end{eqnarray}
+Ultimately, the inverse Fourier transform of the cross-spectral density given above has the form:
+\begin{multline*}
+\frac{2^{d/2}}{\Gamma\left(\nu_{ij}\right)a_{ij}^d}\int_0^{\infty}z^{\nu_{ij}+d/2-1} \exp\left(-z\right)\Big|u^2\boldsymbol{\Sigma}+\frac{2z}{a_{ij}^2}\mathbf{I}_{d}\Big|^{-1/2}\\
+ \times\exp\left\{-\frac{1}{2}(\mathbf{h}-u\boldsymbol{\mu})^T\left(u^2\boldsymbol{\Sigma}+\frac{2z}{a_{ij}^2}\mathbf{I}_{d}\right)^{-1}(\mathbf{h}-u\boldsymbol{\mu})\right\}\dd z.
+\end{multline*}
+$\hfill \Box$
+
+When $\mathbf{V}=\mathbf{v}$, we retrieve the multivariate Mat\'{e}rn covariance function with a Lagrangian shift as follows:
+\begin{eqnarray*}
+\frac{1}{\Gamma\left(\nu_{ij}\right)} \int_0^{\infty}z^{\nu_{ij}-1} \exp\left(-z\right) \exp\left\{-\frac{a_{ij}^2}{4z}(\mathbf{h}-u\mathbf{v})^T(\mathbf{h}-u\mathbf{v})\right\}\dd z\\
+=\frac{2^{1-\nu_{ij}}}{\Gamma\left(\nu_{ij}\right)}   \left(a_{ij}\|\mathbf{h}-u\mathbf{v}\|\right)^{\nu_{ij}}\mathcal{K}_{\nu_{ij}}\left(a_{ij}\|\mathbf{h}-u\mathbf{v}\|\right). 
+\end{eqnarray*}
+
+\end{proof}
+\endgroup
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% ieeetr
+\baselineskip=20pt
+%\bibliographystyle{plainnat}
+\bibliographystyle{apalike}
+\bibliography{main}
+\end{document}
+
+
+
