@@ -23,9 +23,10 @@ fitting <- function(coordinates, obs1, obs2 = NULL){
   #w_init <- binned[which(binned[,3] == 1)[emp_vel], 1:2] %*% R
   w_init <- c(-2495995, -1783349) %*% R
   t_init <- c(0.9, 0.9)
+  other_init <- c(0.5, 2000, 0.5, 0.5, 6)
   
   M2 <- fit_model(init = theta_init, wind_init = w_init, mod = 'matern', randvel = F, weight = 3, empcov_spatial = binned[which(binned[,3] == 0),], empcov_st = binned[which(binned[,3] == 1),], nug_eff = F, meters = T, num_iter = 10, aniso = T, rotation_matrix = R, asym = kappa)
-  M4 <- fit_model(init = theta_init, wind_init = w_init, temp_init = t_init, mod = 'gneitingmatern_lagrangian', randvel = F, weight = 3, empcov_spatial = binned[which(binned[,3] == 0),], empcov_st = binned[which(binned[,3] == 1),], nug_eff = F, meters = T, num_iter = 10, aniso = T, rotation_matrix = R)
+  M4 <- fit_model(init = c(theta_init[-length(theta_init)], other_init, theta_init[length(theta_init)]), temp_init = c(t_init, w_init), mod = 'gneitingmatern_lagrangian', randvel = F, weight = 3, empcov_spatial = binned[which(binned[,3] == 0),], empcov_st = binned[which(binned[,3] == 1),], nug_eff = F, meters = T, num_iter = 10, aniso = T, rotation_matrix = R)
   M5 <- fit_model(init = theta_init, temp_init = t_init, mod = 'gneitingmatern', randvel = F, weight = 3, empcov_spatial = binned[which(binned[,3] == 0),], empcov_st = binned[which(binned[,3] == 1),], nug_eff = F, meters = T, num_iter = 10, aniso = T, rotation_matrix = R)
   
   
@@ -100,10 +101,10 @@ fit_model <- function(init = NULL, wind_init = NULL, temp_init = NULL, mod, rand
       
       return(lst)
     }
-  }
-  else if(mod == 'lmc'){
-    fit1.mod <- optim(par = init, wls, emp_cov1 = empcov_spatial, nug_eff = F, meters = T, weights = weight, step = 1, aniso = F, model = mod, control=list(maxit = 10000, parscale = init, trace = 5))
-    fit2.mod <- optim(par = wind_init, wls, emp_cov1 = empcov_st, nug_eff = F, meters = T, weights = weight, step = 2, est_param = fit1.mod$par, aniso = F, rand.vel = randvel, model = mod, control = list(maxit = 10000,parscale = wind_init, trace = 5))
+  }else if(mod == 'gneitingmatern_lagrangian'){
+    fit1.mod <- optim(par = init[-length(init)], wls, emp_cov1 = empcov_spatial, nug_eff = F, meters = T, weights = weight, step = 1, ani = aniso, rotmat = rotation_matrix, asymmetry = asym, model = mod, control=list(maxit = 10000, parscale = init[-length(init)], trace = 5))
+    fit2.mod <- optim(par = init[length(init)], wls, emp_cov1 = empcov_spatial, nug_eff = F, meters = T, weights = weight, step = 2, est_param = fit1.mod$par, ani = aniso, rotmat = rotation_matrix, asymmetry = asym, model = mod, method = 'SANN', control=list(maxit = 3000, parscale = init[length(init)], trace = 5))
+    fit3.mod <- optim(par = temp_init, wls, emp_cov1 = empcov_st, nug_eff = F, meters = T, weights = weight, step = 2, est_param = c(fit1.mod$par, fit2.mod$par), aniso = F, rand.vel = randvel, model = mod, control = list(maxit = 10000, parscale = wind_init, trace = 5))
     
     lst <- list(parameters = c(fit1.mod$par, fit2.mod$par), fn_value = fit1.mod$value + fit2.mod$value)
     
@@ -675,6 +676,188 @@ wls <- function(theta, emp_cov1, weights, nug_eff, step, est_param = NULL, meter
       
       return(loss)
       
+    }
+  }else if(model == 'gneitingmatern_lagrangian'){
+    if(step == 1){
+      
+      loss <- 0
+      
+      if(nug_eff == T){
+        nug <- theta[6:7]
+        lambda <- theta[8]
+        scale <- theta[9]
+        mu <- theta[10:11]
+        nu.L <- theta[12]
+      }else{
+        nug <- c(0, 0)
+        lambda <- theta[6]
+        scale <- theta[7]
+        mu <- theta[8:9]
+        nu.L <- theta[10]
+      }
+      nu <- theta[1:2]
+      beta <- theta[3]
+      var <- theta[4:5]
+      
+      mu1 <- mu[1]
+      mu2 <- mu[2]
+      mu3 <- (mu[1] + mu[2])/2
+      
+      nu1 <- nu[1]
+      nu2 <- nu[2]
+      nu3 <- (nu1 + nu2)/2
+      
+      if( theta[1] < 0.0001 | theta[2] < 0.0001 | theta[3] < 0.0001 | theta[4] < 0.0001 | theta[5] < 0.0001 |theta[6]< 0.001 | theta[6] > 1 | theta[7] < 100 |
+          theta[8] < 0.0001 | theta[9] < 0.0001 | theta[10] < 5 ){
+        return(Inf)
+      }else{
+        for(i in 1:2){
+          
+          theo.temp <- ifelse(h != 0, var[i]*(h/beta)^nu[i] * besselK(h/beta,nu[i])/(2^(nu[i]-1)*gamma(nu[i])), var[i] + nug[i])
+          lagrangian <- pmax((1 - h/scale), 0)^(nu.L + mu[i])
+          
+          theo <- (1 - lambda)*theo.temp + lambda*lagrangian
+          if (weights == 1) 
+            tloss <- sum((theo - emp_cov1[,i+3])^2)
+          if (weights == 2) 
+            tloss <- sum(np* (emp_cov1[,i+3] - theo)^2)
+          if (weights == 3) 
+            tloss <- sum(((emp_cov1[,i+3] - theo)/(1.001-theo))^2)
+          
+          loss <- loss+tloss
+        }
+        return(loss)
+      }
+    }else if (step == 2){
+      
+      if(nug_eff == T){
+        nug <- est_param[6:7]
+      }else{
+        nug <- c(0, 0)
+        lambda <- est_param[6]
+        scale <- est_param[7]
+        mu <- est_param[8:9]
+        nu.L <- est_param[10]
+      }
+      nu <- est_param[1:2]
+      beta <- est_param[3]
+      var <- est_param[4:5]
+      
+      loss <- 0
+      
+      rho <- theta
+      
+      mu1 <- mu[1]
+      mu2 <- mu[2]
+      mu3 <- (mu[1] + mu[2])/2
+      
+      nu1 <- nu[1]
+      nu2 <- nu[2]
+      nu3 <- (nu1 + nu2)/2
+      
+      if( abs(rho) > 1){
+        return(Inf)
+      }else{
+        for(i in 3:3){
+          
+          theo.temp <- ifelse(h !=0 ,(h/beta)^nu3 * besselK(h/beta, nu3)/(2^(nu3 - 1)*gamma(nu3))*sqrt(var[1] * var[2])*rho, sqrt(var[1] * var[2])*rho)
+          
+          beta2.3 <- (gamma(1 + mu3)/gamma(1 + nu.L + mu3))*sqrt((gamma(1 + nu.L + mu1)*gamma(1 + nu.L + mu2))/(gamma(1 + mu1)*gamma(1 + mu2)))
+          lagrangian <- beta2.3*pmax((1 - h/scale), 0)^(nu.L + mu3)
+          theo <- (1 - lambda)*theo.temp + lambda*lagrangian
+          
+          if (weights == 1) 
+            tloss <- sum((theo - emp_cov1[,i+3])^2)
+          if (weights == 2) 
+            tloss <- sum(np* (emp_cov1[,i+3] - theo)^2)
+          if (weights == 3) 
+            tloss <- sum(((emp_cov1[,i+3] - theo)/(1.001 - theo))^2)
+          loss <- loss + tloss
+        }
+        return(loss)
+      }
+    }else{
+      
+      if(nug_eff == T){
+        nug <- est_param[6:7]
+      }else{
+        nug <- c(0, 0)
+        lambda <- est_param[6]
+        scale <- est_param[7]
+        mu <- est_param[8:9]
+        nu.L <- est_param[10]
+        rho <- est_param[11]
+      }
+      nu <- est_param[1:2]
+      beta <- est_param[3]
+      var <- est_param[4:5]
+      
+      loss <- 0
+    
+      alpha <- theta[1]
+      b <- theta[2]
+      w <- theta[3:4]
+      loss <- 0
+      
+      new_h <- sqrt(hh[,1]^2+hh[,2]^2)/1000
+      h <- new_h/(alpha+1)^(b/2)
+      t <- emp_cov1[,3]
+      h2 <- sqrt((hh[,1]-w[1])^2+(hh[,2]-w[2])^2)/1000
+      
+      if(meters == T){
+        h <- sqrt((hh[,1] - emp_cov1[,3]*w[1])^2 + (hh[,2] - emp_cov1[,3]*w[2])^2)/1000
+        h2 <- sqrt((hh2[,1] - emp_cov1[,3]*w[1])^2 + (hh2[,2] - emp_cov1[,3]*w[2])^2)/1000
+      }else{
+        h <- sqrt((hh[,1] - emp_cov1[,3]*w[1])^2 + (hh[,2] - emp_cov1[,3]*w[2])^2)
+        h2 <- sqrt((hh2[,1] - emp_cov1[,3]*w[1])^2 + (hh2[,2] - emp_cov1[,3]*w[2])^2)
+      }
+      
+      mu1 <- mu[1]
+      mu2 <- mu[2]
+      mu3 <- (mu[1] + mu[2])/2
+      
+      nu1 <- nu[1]
+      nu2 <- nu[2]
+      nu3 <- (nu1 + nu2)/2
+      
+      if( theta[1] < 0.0001 | theta[2] < 0.0001 | theta[2] > 1){
+        return(Inf)
+      }else{
+        for(i in 1:2){
+          h_star <- h
+          theo.temp <- ifelse(h != 0, var[i]*(h_star/beta)^nu[i] * besselK(h_star/beta,nu[i])/(2^(nu[i]-1)*gamma(nu[i]))/(alpha+1),(var[i]+nug[i])/(alpha+1))
+          lagrangian <- pmax((1 - h2/scale), 0)^(nu.L + mu[i])
+          
+          theo <- (1 - lambda)*theo.temp + lambda*lagrangian
+          if (weights == 1) 
+            tloss <- sum((theo - emp_cov1[,i+3])^2)
+          if (weights == 2) 
+            tloss <- sum(np* (emp_cov1[,i+3] - theo)^2)
+          if (weights == 3) 
+            tloss <- sum(((emp_cov1[,i+3] - theo)/(1.001 - theo))^2)
+          
+          loss <- loss+tloss
+        }
+        for(i in 3:3){
+          
+          h_star <- h
+          
+          theo.temp <- ifelse(h != 0,(h_star/beta)^nu3 * besselK(h_star/beta, nu3)/(2^(nu3 - 1)*gamma(nu3))*sqrt(var[1] * var[2])*rho/((alpha + 1)), sqrt(var[1] * var[2])*rho/((alpha + 1)))
+          
+          beta2.3 <- (gamma(1 + mu3)/gamma(1 + nu.L + mu3))*sqrt((gamma(1 + nu.L + mu1)*gamma(1 + nu.L + mu2))/(gamma(1 + mu1)*gamma(1 + mu2)))
+          lagrangian <- beta2.3*pmax((1 - h2/scale),0)^(nu.L+mu3)
+          theo <- (1 - lambda)*theo.temp + lambda*lagrangian
+          
+          if (weights == 1) 
+            tloss <- sum((theo - emp_cov1[,i+3])^2)
+          if (weights == 2) 
+            tloss <- sum(np* (emp_cov1[,i+3] - theo)^2)
+          if (weights == 3) 
+            tloss <- sum(((emp_cov1[,i+3] - theo)/(1.001 - theo))^2)
+          loss <- loss + tloss
+        }
+        return(loss)
+      }
     }
   }
 }
