@@ -15,27 +15,41 @@ fitting <- function(coordinates, obs1, obs2 = NULL){
   R <- matrix(c(-1.1339125*cos(116.9811232), -1.1339125*sin(116.9811232), 0.8617141*sin(116.9811232),
                 -0.8617141*cos(116.9811232)), ncol=2, byrow=T)
   
-  theta_init <- c(3.218, 3.736, 794.8, 1, 1, max(binned[which(binned[,3] == 0), 6]) - 0.001)
+  theta_init <- c(3,4, 794.8, 1, 1, max(binned[which(binned[,3] == 0), 6]) - 0.001)
   emp_vel <- which.max(binned[which(binned[,3] == 1), 4])
   #kappa_ind <- which.max(binned[which(binned[,3] == 0), 6])
   #kappa <- binned[which(binned[,3] == 0)[kappa_ind], 1:2] %*% R
   kappa <- matrix(c(704400, 205700), ncol = 2)
   #w_init <- binned[which(binned[,3] == 1)[emp_vel], 1:2] %*% R
   w_init <- c(-2495995, -1783349) %*% R
-  t_init <- c(0.9, 0.9)
+  decay <- c(0.4, 0.1)
+  t_init <- c(0.99, 0.99)
   other_init <- c(0.5, 2000, 0.5, 0.5, 6)
+
+  #w_init=c(-756163.3, 579430.6)
+  #w_var <- c(3905504484.2, 1093290456.9, 1545066174.0)
+  #-1038390.4     278837.9 4455873832.1 1223028720.4 2222390454.9
   
-  M2 <- fit_model(init = theta_init, wind_init = w_init, mod = 'matern', randvel = F, weight = 3, empcov_spatial = binned[which(binned[,3] == 0),], empcov_st = binned[which(binned[,3] == 1),], nug_eff = F, meters = T, num_iter = 10, aniso = T, rotation_matrix = R, asym = kappa)
+  w_init <- c(-393048.2, 475609.2)
+  w_var <- c(2014856.1, 121333.7, 2496301.5)
+  #-756724.6  579775.5 3901641.7 1097350.8 1547412.4
+  #-1039768.7   279262.1  4535528.4  1181704.7  2149263.4
+  
+  lmc_init <- c(1, 2, 1200.6314, 1591.1927, 1.21802, 1.033560, 0.8621720, 0.5367004, 0.0000002056025, 0.9935446)
+  lmc_w_init <- c(-897386.7980, -438772.3458, -373454.1753, 167183.9760, 6258.984, -032.18460, 1654.979, 1380.273, -0070.52379, 0112.9060)
+  
+  M1 <- fit_model(init = theta_init, wind_init = c(w_init, w_var), mod = 'matern', randvel = T, weight = 3, empcov_spatial = binned[which(binned[,3] == 0),], empcov_st = binned[which(binned[,3] == 1),], nug_eff = F, meters = T, num_iter = 0, aniso = T, rotation_matrix = R, asym = kappa)
+  M2 <- fit_model(init = theta_init, wind_init = c(w_init, decay), mod = 'matern', randvel = F, weight = 3, empcov_spatial = binned[which(binned[,3] == 0),], empcov_st = binned[which(binned[,3] == 1),], nug_eff = F, meters = T, num_iter = 10, aniso = T, rotation_matrix = R, asym = kappa)
+  M3 <- fit_model(init = lmc_init, wind_init = lmc_w_init, mod = 'lmc', randvel = T, weight = 3, empcov_spatial = binned[which(binned[,3] == 0),], empcov_st = binned[which(binned[,3] == 1),], nug_eff = F, meters = T, num_iter = 0, aniso = T, rotation_matrix = R, asym = kappa)
   M4 <- fit_model(init = c(theta_init[-length(theta_init)], other_init, theta_init[length(theta_init)]), temp_init = c(t_init, w_init), mod = 'gneitingmatern_lagrangian', randvel = F, weight = 3, empcov_spatial = binned[which(binned[,3] == 0),], empcov_st = binned[which(binned[,3] == 1),], nug_eff = F, meters = T, num_iter = 10, aniso = T, rotation_matrix = R)
-  M5 <- fit_model(init = theta_init, temp_init = t_init, mod = 'gneitingmatern', randvel = F, weight = 3, empcov_spatial = binned[which(binned[,3] == 0),], empcov_st = binned[which(binned[,3] == 1),], nug_eff = F, meters = T, num_iter = 10, aniso = T, rotation_matrix = R)
-  
+  M5 <- fit_model(init = theta_init, temp_init = t_init, mod = 'gneitingmatern', randvel = F, weight = 3, empcov_spatial = binned[which(binned[,3] == 0),], empcov_st = binned[which(binned[,3] == 1),], nug_eff = F, meters = T, num_iter = 0, aniso = T, rotation_matrix = R)
   
   hlag <- sqrt(binned[which(binned[,3] == 0), 1]^2 + binned[which(binned[,3] == 0), 2]^2)
   #display plots
   par(mfrow = c(1,3))
-  plot(hlag/1000, binned[which(binned[,3] == 0), 4], pch = 3, ylab='', col = 1, xlab='Spatial Lag (km)', main='', col.main = "#4EC1DE")
-  plot(hlag/1000, binned[which(binned[,3] == 0), 5], pch = 3, ylab='', col = 1, xlab='Spatial Lag (km)', main='', col.main = "#4EC1DE")
-  plot(hlag/1000, binned[which(binned[,3] == 0), 6], pch = 3, ylab='', col = 1, xlab='Spatial Lag (km)', main='', col.main = "#4EC1DE")
+  plot(hlag/1000, binned[which(binned[,3] == 0), 4], pch = 3, ylab='', col = 1, xlab = 'Spatial Lag (km)', main='', col.main = "#4EC1DE")
+  plot(hlag/1000, binned[which(binned[,3] == 0), 5], pch = 3, ylab='', col = 1, xlab = 'Spatial Lag (km)', main='', col.main = "#4EC1DE")
+  plot(hlag/1000, binned[which(binned[,3] == 0), 6], pch = 3, ylab='', col = 1, xlab = 'Spatial Lag (km)', main='', col.main = "#4EC1DE")
 }
 
 fit_model <- function(init = NULL, wind_init = NULL, temp_init = NULL, mod, randvel, weight, empcov_spatial = NULL, empcov_st, nug_eff = F, meters = T, num_iter, 
@@ -52,7 +66,12 @@ fit_model <- function(init = NULL, wind_init = NULL, temp_init = NULL, mod, rand
         
         fit3.mod <- optim(par = wind_init, wls, emp_cov1 = empcov_st, nug_eff = F, meters = T, weights = weight, step = 3, est_param = c(fit1.mod$par, fit2.mod$par), ani = aniso, rotmat = rotation_matrix, asymmetry = asym, rand.vel = randvel, model = mod, control = list(maxit = 10000, parscale = wind_init, trace = 5))
         
-        lst <- list(parameters = c(est_param.temp, fit3.mod$par), fn_value = fit1.mod$value + fit2.mod$value + fit3.mod$value)
+        fit3.mod <- optim(par = wind_init, wls, emp_cov1 = empcov_st[whichpart(empcov_st[, 4], 10),], nug_eff = F, meters = T, weights = weight, step = 3, est_param = c(fit1.mod$par, fit2.mod$par), ani = aniso, rotmat = rotation_matrix, asymmetry = asym, rand.vel = randvel, model = mod, control = list(maxit = 10000, parscale = wind_init, trace = 5))
+        
+        new_wind_init <- fit3.mod$par
+        fit3.mod <- optim(par = new_wind_init, wls, emp_cov1 = empcov_st[whichpart(empcov_st[, 4], 3000),], nug_eff = F, meters = T, weights = weight, step = 3, est_param = c(fit1.mod$par, fit2.mod$par), ani = aniso, rotmat = rotation_matrix, asymmetry = asym, rand.vel = randvel, model = mod, control = list(maxit = 10000, parscale = wind_init, trace = 5))
+        
+        lst <- list(parameters = c(fit1.mod$par, fit2.mod$par, fit3.mod$par), fn_value = fit1.mod$value + fit2.mod$value + fit3.mod$value)
         
         return(lst)
       }else if(randvel == F){
@@ -87,15 +106,22 @@ fit_model <- function(init = NULL, wind_init = NULL, temp_init = NULL, mod, rand
     }
   }else if(mod == 'lmc'){
     if(randvel == T){
-      fit1.mod <- optim(par = init, wls, emp_cov1 = empcov_spatial, nug_eff = F, meters = T, weights = weight, step = 1, aniso = F, model = mod, control=list(maxit = 10000, parscale = init, trace = 5))
-      fit2.mod <- optim(par = wind_init, wls, emp_cov1 = empcov_st, nug_eff = F, meters = T, weights = weight, step = 2, est_param = fit1.mod$par, aniso = F, rand.vel = randvel, model = mod, control = list(maxit = 10000,parscale = wind_init, trace = 5))
+      fit1.mod <- optim(par = init, wls, emp_cov1 = empcov_spatial, nug_eff = F, meters = T, weights = weight, step = 1, ani = aniso, rotmat = rotation_matrix, asymmetry = asym, model = mod, control=list(maxit = 10000, parscale = init, trace = 5))
+      
+      for(aa in 1:2){
+        new_init <- fit1.mod$par
+        fit1.mod <- optim(par = new_init, wls, emp_cov1 = empcov_spatial, nug_eff = F, meters = T, weights = weight, step = 1, ani = aniso, rotmat = rotation_matrix, asymmetry = asym, model = mod, control=list(maxit = 10000, parscale = init, trace = 5))
+        
+      }
+           
+      fit2.mod <- optim(par = wind_init, wls, emp_cov1 = empcov_st, nug_eff = F, meters = T, weights = weight, step = 2, est_param = fit1.mod$par, ani = aniso, rotmat = rotation_matrix, asymmetry = asym, rand.vel = randvel, model = mod, control = list(maxit = 10000,parscale = wind_init, trace = 5))
       
       lst <- list(parameters = c(fit1.mod$par, fit2.mod$par), fn_value = fit1.mod$value + fit2.mod$value)
       
       return(lst)
     }else if(randvel == F){
-      fit1.mod <- optim(par = init, wls, emp_cov1 = empcov_spatial, nug_eff = F, meters = T, weights = weight, step = 1, aniso = F, model = mod, control=list(maxit = 10000, parscale = init, trace = 5))
-      fit2.mod <- optim(par = wind_init, wls, emp_cov1 = empcov_st, nug_eff = F, meters = T, weights = weight, step = 2, est_param = fit1.mod$par, aniso = F, rand.vel = randvel, model = mod, control = list(maxit = 10000,parscale = wind_init, trace = 5))
+      fit1.mod <- optim(par = init, wls, emp_cov1 = empcov_spatial, nug_eff = F, meters = T, weights = weight, step = 1, ani = aniso, rotmat = rotation_matrix, asymmetry = asym, model = mod, control=list(maxit = 10000, parscale = init, trace = 5))
+      fit2.mod <- optim(par = wind_init, wls, emp_cov1 = empcov_st, nug_eff = F, meters = T, weights = weight, step = 2, est_param = fit1.mod$par, ani = aniso, rotmat = rotation_matrix, asymmetry = asym, rand.vel = randvel, model = mod, control = list(maxit = 10000,parscale = wind_init, trace = 5))
       
       lst <- list(parameters = c(fit1.mod$par, fit2.mod$par), fn_value = fit1.mod$value + fit2.mod$value)
       
@@ -103,16 +129,95 @@ fit_model <- function(init = NULL, wind_init = NULL, temp_init = NULL, mod, rand
     }
   }else if(mod == 'gneitingmatern_lagrangian'){
     fit1.mod <- optim(par = init[-length(init)], wls, emp_cov1 = empcov_spatial, nug_eff = F, meters = T, weights = weight, step = 1, ani = aniso, rotmat = rotation_matrix, asymmetry = asym, model = mod, control=list(maxit = 10000, parscale = init[-length(init)], trace = 5))
+    for(aa in 1:10){
+      new_init <- fit1.mod$par
+      fit1.mod <- optim(par = new_init, wls, emp_cov1 = empcov_spatial, nug_eff = F, meters = T, weights = weight, step = 1, ani = aniso, rotmat = rotation_matrix, asymmetry = asym, model = mod, control=list(maxit = 10000, parscale = init[-length(init)], trace = 5))
+    }
     fit2.mod <- optim(par = init[length(init)], wls, emp_cov1 = empcov_spatial, nug_eff = F, meters = T, weights = weight, step = 2, est_param = fit1.mod$par, ani = aniso, rotmat = rotation_matrix, asymmetry = asym, model = mod, method = 'SANN', control=list(maxit = 3000, parscale = init[length(init)], trace = 5))
-    fit3.mod <- optim(par = temp_init, wls, emp_cov1 = empcov_st, nug_eff = F, meters = T, weights = weight, step = 2, est_param = c(fit1.mod$par, fit2.mod$par), aniso = F, rand.vel = randvel, model = mod, control = list(maxit = 10000, parscale = wind_init, trace = 5))
+    fit3.mod <- optim(par = temp_init, wls, emp_cov1 = empcov_st, nug_eff = F, meters = T, weights = weight, step = 3, est_param = c(fit1.mod$par, fit2.mod$par), ani = aniso, rotmat = rotation_matrix, asymmetry = asym, rand.vel = randvel, model = mod, control = list(maxit = 10000, parscale = temp_init, trace = 5))
     
-    lst <- list(parameters = c(fit1.mod$par, fit2.mod$par), fn_value = fit1.mod$value + fit2.mod$value)
+    lst <- list(parameters = c(fit1.mod$par, fit2.mod$par, fit3.mod$par), fn_value = fit1.mod$value + fit2.mod$value + fit3.mod$value)
     
     return(lst)
   }
 }
 
+kriging <- function(params, model, max_time_lag = 1, q = 2){
+  
+  obs <- matrix(, nrow = nrow(loc)*q*(max_time_lag + 1) - length(to_remove), ncol = (ncol(obs1) - 1))
+  valid_pts <- matrix(, nrow = length(to_remove), ncol = (ncol(obs1) - 1))
+  
+  for(dd in 1:(ncol(obs1) - 1)){
+    
+    orig_var1 <- orig_var2 <- matrix(, ncol = (max_time_lag + 1), nrow = nrow(loc))
+    
+    for(aa in 1:time){
+      orig_var1[,aa] <- obs1[, aa + dd - 1]
+      orig_var2[,aa] <- obs2[, aa + dd - 1]
+    }
+    obs[, dd] <- c(c(orig_var1),c(orig_var2))[-to_remove]
+    valid_pts[, dd] <- matrix(c(c(orig_var1), c(orig_var2))[to_remove], ncol=1, byrow=F)
+  }
+  
+  if(model == 'M1'){
+    sim.cov <- simulate_model(mod = 'matern', randvel = T, theta = params[1:6], wind = params[7:8], wind_var = params[9:11], maxtimelag = max_time_lag, p = q, locations = loc, meters = T, nugeff = nugget, kaps = c(704400, 205700))
+  }
+  
+  if(model == 'M2'){
+    th <- params[9:10]
+    sim.cov <- simulate_model(mod = 'matern', randvel = F, theta = params[1:6], wind = params[7:8], maxtimelag = max_time_lag, p = q, locations = loc, meters = T, nugeff = nugget, kaps = c(704400, 205700))
+    
+    sim.cov[1:100,101:200] <- exp(-th[1])*sim.cov[1:100,101:200]
+    sim.cov[101:200,1:100] <- exp(-th[1])*sim.cov[101:200,1:100] 
+    sim.cov[201:300,301:400] <- exp(-th[2])*sim.cov[201:300,301:400]
+    sim.cov[301:400,201:300] <- exp(-th[2])*sim.cov[301:400,201:300]
+    sim.cov[1:100,301:400] <- exp(-(th[1] + th[2])/2)*sim.cov[1:100,301:400]
+    sim.cov[301:400,1:100] <- exp(-(th[1] + th[2])/2)*sim.cov[301:400,1:100]
+    sim.cov[101:200,201:300] <- exp(-(th[1] + th[2])/2)*sim.cov[101:200,201:300]
+    sim.cov[201:300,101:200] <- exp(-(th[1] + th[2])/2)*sim.cov[201:300,101:200]
+  }
+  
+  if(model == 'M3'){
+    sim.cov <- simulate_model(mod = 'lmc', randvel = T, theta = params[1:10], wind = params[11:14], wind_var = list(matrix(c(params[15:16], params[16:17]), ncol=2), matrix(c(params[18:19], params[19:20]), ncol=2)), maxtimelag = max_time_lag, p = q, locations = loc, meters = T, nugeff = nugget)
+  }
+  
+  if(model == 'M4'){
+    sim.cov_old <- simulate_model(mod = 'M5', theta = c(params[1:5], params[11:13]), maxtimelag = 1, p = q, locations = loc, meters = T, nugeff = nugget)
+    sim.cov <- simulate_model(mod = model, theta = c(params[8:10], params[7]), wind = params[14:15], maxtimelag = max_time_lag, p = q, locations = loc, meters = T, nugeff = nugget)
+    full_cov1 <- (1-params[6])*sim.cov_old + params[6]*sim.cov
+  }
+  
+  if(model == 'M5'){
+    sim.cov <- simulate_model(mod = model, theta = params, maxtimelag = 1, p = q, locations = loc, meters = T, nugeff = nugget)
+  }
+  
+  full_cov1 <- sim.cov
+  given_cov1 <- full_cov1[-to_remove, -to_remove]
+  unknown_cov1 <- full_cov1[to_remove, -to_remove]
+  var_pred1 <- diag(full_cov1[to_remove, to_remove] - unknown_cov1 %*% solve(given_cov1) %*% t(full_cov1[to_remove, -to_remove]))
+  
+  test1 <- unknown_cov1 %*%chol2inv(chol(given_cov1))%*% obs
+  
+  diff1 <- test1 - valid_pts
+  
+  rmse <- sqrt(mean(diff1^2))
+  
+  mae <- mean(abs(diff1))
+  
+  z <- diff1/var_pred1 ## center and scale
+  crps<- var_pred1 * (z*(2*pnorm(z, 0, 1) - 1) + 2*dnorm(z, 0, 1) - 1/sqrt(pi))
+  crps_mat <- mean(crps)
+  
+  if(model == 'M1' | model == 'M2'){
+    aic <- q*length(to_remove)*log(xx) + 2*(length(params) + 4 + 1)
+  }else{
+    aic <- q*length(to_remove)*log(mean(diff1^2)) + 2*(length(params) + 2 + 1)
+  }
 
+  mean(rmse)
+  mean(crps_mat)
+  mean(aic)
+}
 
 empirical_st_cov <- function(data1, data2, locations, max_time_lag, simulated, p = 2){
   
@@ -158,7 +263,6 @@ empirical_st_cov <- function(data1, data2, locations, max_time_lag, simulated, p
       loc <- 1
       xlag <- locations[loc,1]-locations[,1]
       ylag <- locations[loc,2]-locations[,2]
-      emp_vals <- scor[,loc]
       emp_vals <- cbind(scor1[,loc], scor2[,loc], scor3[,loc])
       
       for(loc in 1:nrow(locations)){
@@ -293,15 +397,21 @@ simulation_study <- function(true_param_spatial, true_param_velocity, sim_model,
   return(mod_params)
 }
 
-simulate_model <- function(mod, theta, wind, wind_var = NULL, maxtimelag, p = 2, locations, meters = T, nugeff, randvel){
-  if(mod == 'matern' & randvel == T){
-    cov.mod <- matern_random_cov(theta, wind, wind_var, max_time_lag = maxtimelag, q = p, new_locations = locations, nug_eff = nugeff )
-  }else if(mod == 'matern' & randvel == F){
-    cov.mod <- matern_cov(theta, wind, max_time_lag = maxtimelag, q = p, new_locations = locations, nug_eff = nugeff )
-  }else if(mod == 'lmc' & randvel == T){
-    cov.mod <- lmc_random_cov(theta, wind, wind_var, max_time_lag = maxtimelag, q = p, new_locations = locations, nug_eff = nugeff )
-  }else if(mod == 'lmc' & randvel == F){
-    cov.mod <- lmc_cov(theta, wind, max_time_lag = maxtimelag, q = p, new_locations = locations, nug_eff = nugeff )
+simulate_model <- function(mod, theta, wind = NULL, wind_var = NULL, maxtimelag, p = 2, locations, meters = T, nugeff, randvel = NULL, kaps = NULL){
+  if(!is.null(randvel)){
+    if(mod == 'matern' & randvel == T){
+      cov.mod <- matern_random_cov(theta, wind, wind_var, max_time_lag = maxtimelag, q = p, new_locations = locations, nug_eff = nugeff, kap = kaps)
+    }else if(mod == 'matern' & randvel == F){
+      cov.mod <- matern_cov(theta, wind, max_time_lag = maxtimelag, q = p, new_locations = locations, nug_eff = nugeff, kap = kaps)
+    }else if(mod == 'lmc' & randvel == T){
+      cov.mod <- lmc_random_cov(theta, wind, wind_var, max_time_lag = maxtimelag, q = p, new_locations = locations, nug_eff = nugeff )
+    }else if(mod == 'lmc' & randvel == F){
+      cov.mod <- lmc_cov(theta, wind, max_time_lag = maxtimelag, q = p, new_locations = locations, nug_eff = nugeff )
+    }
+  }else{
+    if(mod == 'M5'){
+      cov.mod <- matern_allard(theta, max_time_lag = maxtimelag, q = p, new_locations = locations, nug_eff = nugeff )
+    }
   }
   return(cov.mod)
 }
@@ -325,11 +435,11 @@ wls <- function(theta, emp_cov1, weights, nug_eff, step, est_param = NULL, meter
   }
   
   if(meters == T){
-    h <- sqrt(hh[,1]^2 + hh[,2]^2)/1000
-    h2 <- sqrt(hh2[,1]^2 + hh2[,2]^2)/1000
+    h <- sqrt(hh[, 1]^2 + hh[, 2]^2)/1000
+    h2 <- sqrt(hh2[, 1]^2 + hh2[, 2]^2)/1000
   }else{
-    h <- sqrt(hh[,1]^2 + hh[,2]^2)
-    h2 <- sqrt(hh2[,1]^2 + hh2[,2]^2)
+    h <- sqrt(hh[, 1]^2 + hh[, 2]^2)
+    h2 <- sqrt(hh2[, 1]^2 + hh2[, 2]^2)
   }
   
   np <- ifelse(h != 0, 1/h, 1)
@@ -348,7 +458,17 @@ wls <- function(theta, emp_cov1, weights, nug_eff, step, est_param = NULL, meter
       beta <- theta[3]
       var <- theta[4:5]
       
-      if( theta[1] < 0.0001 | theta[2] < 0.0001 | theta[3] < 0.0001 | theta[4] < 0.0001 | theta[5] < 0.0001 ){
+      sim.cov <- simulate_model(mod = 'M5', theta = c(theta, theta_init[length(theta_init)], t_init), maxtimelag = 0, p = q, locations = loc, meters = T, nugeff = nug_eff)
+      
+      #sim.cov <- matern_allard(theta = c(theta, theta_init[length(theta_init)], temp_init), max_time_lag = 0, q=2, new_locations = locations, meters = T, nug_eff = F)
+      
+      full_cov1 <- sim.cov
+      given_cov1 <- full_cov1[-to_remove_old, -to_remove_old]
+      unknown_cov1 <- full_cov1[to_remove_old, -to_remove_old]
+      var_pred1 <- tryCatch(diag(full_cov1[to_remove_old, to_remove_old] - unknown_cov1 %*% solve(given_cov1) %*% t(full_cov1[to_remove_old, -to_remove_old])), error = function(e) NULL)
+      
+      
+      if( theta[1] < 0.0001 | theta[2] < 0.0001 | theta[3] < 0.0001 | theta[4] < 0.0001 | theta[5] < 0.0001 | length(var_pred1) == 0 ){
         return(Inf)
       }else{
         for(i in 1:2){
@@ -381,7 +501,13 @@ wls <- function(theta, emp_cov1, weights, nug_eff, step, est_param = NULL, meter
       
       nu3 <- (nu[1]+nu[2])/2
       
-      if( abs(rho) > 1 ){
+      sim.cov <- simulate_model(mod = 'M5', theta = c(est_param, theta, t_init), maxtimelag = 0, p = q, locations = loc, meters = T, nugeff = nug_eff)
+      full_cov1 <- sim.cov
+      given_cov1 <- full_cov1[-to_remove_old, -to_remove_old]
+      unknown_cov1 <- full_cov1[to_remove_old, -to_remove_old]
+      var_pred1 <- tryCatch(diag(full_cov1[to_remove_old, to_remove_old] - unknown_cov1 %*% solve(given_cov1) %*% t(full_cov1[to_remove_old, -to_remove_old])), error = function(e) NULL)
+      
+      if( abs(rho) > 1 | length(var_pred1) == 0){
         return(Inf)
       }else{
         
@@ -417,7 +543,10 @@ wls <- function(theta, emp_cov1, weights, nug_eff, step, est_param = NULL, meter
         loss<- 0
         
         if(!rand.vel == T){
-          w <- theta
+          w <- theta[1:2]
+          c <- theta[3:4]
+          
+          c3 <- (c[1] + c[2])/2
           
           if(meters == T){
             h <- sqrt((hh[,1] - emp_cov1[,3]*w[1])^2 + (hh[,2] - emp_cov1[,3]*w[2])^2)/1000
@@ -428,51 +557,52 @@ wls <- function(theta, emp_cov1, weights, nug_eff, step, est_param = NULL, meter
           }
           
           np <- ifelse(h != 0, 1/h, 1)
-          
-          for(i in 1:2){
+          if(c[1] <= 0 | c[2] <= 0 ){
+            return(Inf)
+          }else{
+            for(i in 1:2){
+              
+              theo <- ifelse(h!=0, var[i]*(h/beta)^nu[i]*besselK(h/beta,nu[i])/(2^(nu[i]-1)*gamma(nu[i])), var[i]+nug[i])
+              if (weights == 1) 
+                tloss <- sum((exp(-c[i])*theo - emp_cov1[,i+3])^2)
+              if (weights == 2) 
+                tloss <- sum(np* (emp_cov1[,i+3] - exp(-c[i])*theo)^2)
+              if (weights == 3) 
+                tloss <- sum(((emp_cov1[,i+3] - exp(-c[i])*theo)/(1.001 - exp(-c[i])*theo))^2)
+              
+              loss <- loss + tloss
+            }
             
-            theo <- ifelse(h!=0, var[i]*(h/beta)^nu[i]*besselK(h/beta,nu[i])/(2^(nu[i]-1)*gamma(nu[i])), var[i]+nug[i])
-            if (weights == 1) 
-              tloss <- sum((theo - emp_cov1[,i+3])^2)
-            if (weights == 2) 
-              tloss <- sum(np* (emp_cov1[,i+3] - theo)^2)
-            if (weights == 3) 
-              tloss <- sum(((emp_cov1[,i+3] - theo)/(1.001 - theo))^2)
-            
-            loss <- loss + tloss
+            for(i in 3:3){
+              
+              theo <- ifelse(h2 != 0, rho*sqrt(var[1]*var[2])*(h2/beta)^nu3*besselK(h2/beta, nu3)/(2^(nu3-1)*gamma(nu3)), rho*sqrt(var[1]*var[2]))
+              if (weights == 1) 
+                tloss <- sum((theo - exp(-c3)*emp_cov1[,i+3])^2)
+              if (weights == 2) 
+                tloss <- sum(np * (emp_cov1[,i+3] - exp(-c3)*theo)^2)
+              if (weights == 3) 
+                tloss<-sum(((emp_cov1[,i+3] - theo)/(1.001 - exp(-c3)*theo))^2)
+              loss <- loss + tloss
+            }
+            return(loss)
           }
-          
-          for(i in 3:3){
-            
-            theo <- ifelse(h2 != 0, rho*sqrt(var[1]*var[2])*(h2/beta)^nu3*besselK(h2/beta, nu3)/(2^(nu3-1)*gamma(nu3)), rho*sqrt(var[1]*var[2]))
-            if (weights == 1) 
-              tloss <- sum((theo - emp_cov1[,i+3])^2)
-            if (weights == 2) 
-              tloss <- sum(np * (emp_cov1[,i+3] - theo)^2)
-            if (weights == 3) 
-              tloss<-sum(((emp_cov1[,i+3] - theo)/(1.001 - theo))^2)
-            loss <- loss + tloss
-          }
-          return(loss)
         }else{
           
-          Sigma <- matrix(c(theta[1], theta[2], theta[2], theta[3]), ncol=2)
+          beta <- est_param[3]/1000
           
           if(meters == T){
-            #w <- emp_cov1[which.max(emp_cov1[,4]),1:2]/1000
-            w <- theta[4:5]/1000
-            #w2 <- theta[6:7]/1000
-            hh <- emp_cov1[,1:2]%*%R/1000
-            hh2 <- cbind(hh[,1] - kappa[1], hh[,2] - kappa[2])
+            w <- theta[1:2]/1000000
+            Sigma <- matrix(c(theta[3:4], theta[4:5]), ncol=2)/1000000
+            h <- hh/1000000
+            h2 <- hh2/1000000
           }else{
-            #w <- emp_cov1[which.max(emp_cov1[,4]),1:2]
-            w <- theta[4:5]
-            #w2 <- theta[6:7]
-            hh <- emp_cov1[,1:2]%*%R
-            hh2 <- cbind(hh[,1] - kappa[1], hh[,2] - kappa[2])
+            w <- theta[1:2]
+            Sigma <- matrix(c(theta[3:4], theta[4:5]), ncol=2)
+            h <- hh
+            h2 <- hh2
           }
           
-          if(min(eigen(Sigma)$val) < 0 | theta[1] < 0 | theta[3] < 0){
+          if(min(eigen(Sigma)$val) < 0 | theta[3] < 0 | theta[5] < 0){
             return(Inf)
           }else{
             for(i in 1:2){
@@ -483,11 +613,11 @@ wls <- function(theta, emp_cov1, weights, nug_eff, step, est_param = NULL, meter
               }
               lai <- function(xxxx) integrate(Int.func, lower = 0, upper = Inf, hvec = xxxx)$val
               
-              theo <- apply(cbind(hh, 1), 1, lai)
+              theo <- apply(cbind(h, emp_cov1[, 3]), 1, lai)
               if(weight == 3){
-                tloss <- sum(((emp_cov1[,i+3] - 4*pi*beta^2/gamma(nu[i])*theo)/(1.001 - 4*pi*beta^2/gamma(nu[i])*theo))^2)
+                tloss <- sum(((emp_cov1[,i+3] - var[i]*4*pi*beta^2/gamma(nu[i])*theo)/(1.001 - var[i]*4*pi*beta^2/gamma(nu[i])*theo))^2)
               }else{
-                tloss <- sum(((emp_cov1[,i+3] - 4*pi*beta^2/gamma(nu[i])*theo))^2)
+                tloss <- sum(((emp_cov1[,i+3] - var[i]*4*pi*beta^2/gamma(nu[i])*theo))^2)
               }
               loss <- loss + tloss
             }
@@ -499,9 +629,9 @@ wls <- function(theta, emp_cov1, weights, nug_eff, step, est_param = NULL, meter
                 sapply(c, y.fun)
               }
               lai <- function(xxxx) integrate(Int.func, lower = 0, upper=Inf, hvec = xxxx)$val
-              theo <- apply(cbind(hh2, 1), 1, lai)
+              theo <- apply(cbind(h2, emp_cov1[, 3]), 1, lai)
               if(weight == 3){
-                tloss <- sum(((emp_cov1[,i+3] - sqrt(var[1] * var[2])*rho*4*pi*beta^2/gamma(nu3)*theo)/(max(emp_cov1[,i+3]) - sqrt(var[1] * var[2])*rho*4*pi*beta^2/gamma(nu3)*theo))^2)
+                tloss <- sum(((emp_cov1[,i+3] - sqrt(var[1] * var[2])*rho*4*pi*beta^2/gamma(nu3)*theo)/(1.001 - sqrt(var[1] * var[2])*rho*4*pi*beta^2/gamma(nu3)*theo))^2)
               }else{
                 tloss <- sum(((emp_cov1[,i+3] - sqrt(var[1] * var[2])*rho*4*pi*beta^2/gamma(nu3)*theo))^2)
               }
@@ -520,7 +650,14 @@ wls <- function(theta, emp_cov1, weights, nug_eff, step, est_param = NULL, meter
         
         new_h <- h/(alpha + 1)^(b/2)
         
-        if( theta[1] < 0.0001 | theta[2] < 0.0001 | theta[2] > 1){
+        sim.cov <- simulate_model(mod = 'M5', theta = c(est_param, theta), maxtimelag = max_time_lag, p = q, locations = loc, meters = T, nugeff = nug_eff)
+        full_cov1 <- sim.cov
+        given_cov1 <- full_cov1[-to_remove, -to_remove]
+        unknown_cov1 <- full_cov1[to_remove, -to_remove]
+        var_pred1 <- tryCatch(diag(full_cov1[to_remove, to_remove] - unknown_cov1 %*% solve(given_cov1) %*% t(full_cov1[to_remove, -to_remove])), error = function(e) NULL)
+        
+        
+        if( theta[1] < 0.000001 | theta[2] < 0.000001 | theta[2] > 1 | length(var_pred1) == 0){
           return(Inf)
         }else{
           for(i in 1:2){
@@ -552,6 +689,7 @@ wls <- function(theta, emp_cov1, weights, nug_eff, step, est_param = NULL, meter
       }
     }
   } else if(model == 'lmc'){
+    loss <- 0
     if(step == 1){
       if(nug_eff == T){
         nug <- theta[7:8]
@@ -564,8 +702,16 @@ wls <- function(theta, emp_cov1, weights, nug_eff, step, est_param = NULL, meter
       beta <- theta[3:4]
       var <- theta[5:6]
       
-      if( theta[1] < 0.0001 | theta[2] < 0.0001 | theta[3] < 0.0001 | theta[4] < 0.0001 | theta[5] < 0 | theta[6] < 0 |
-          theta[7]< 0 |  theta[7] > 1 | theta[8] < 0 | theta[8] > 1 | theta[9] < 0 |  theta[9] > 1 | theta[10] < 0 | theta[10] > 1){
+      sim.cov <- simulate_model(mod = 'lmc', randvel = T, theta = theta[1:10], wind = theta[1:4], wind_var = list(matrix(c(theta[5:6], theta[6:7]), ncol=2), matrix(c(theta[8:9], theta[9:10]), ncol=2)), maxtimelag = 0, p = q, locations = loc, meters = T, nugeff = nug_eff)
+      
+      full_cov1 <- sim.cov
+      given_cov1 <- full_cov1[-to_remove_old, -to_remove_old]
+      unknown_cov1 <- full_cov1[to_remove_old, -to_remove_old]
+      var_pred1 <- tryCatch(diag(full_cov1[to_remove_old, to_remove_old] - unknown_cov1 %*% solve(given_cov1) %*% t(full_cov1[to_remove_old, -to_remove_old])), error = function(e) NULL)
+      
+      
+      if( theta[1] < 0.0001 | theta[1] > 4 | theta[2] < 0.0001 | theta[2] < 0.0001 | theta[3] < 0.0001 | theta[4] < 0.0001 | theta[5] < 0.99 | theta[6] < 0.99 |
+          theta[7]< 0 |  theta[7] > 1 | theta[8] < 0 | theta[8] > 1 | theta[9] < 0 |  theta[9] > 1 | theta[10] < 0 | theta[10] > 1 | length(var_pred1) == 0){
         return(Inf)
       }else{
         theo_list <- list()
@@ -593,7 +739,7 @@ wls <- function(theta, emp_cov1, weights, nug_eff, step, est_param = NULL, meter
         if (weights == 2) 
           tloss <- sum(np*(emp_cov1[,6] - theo)^2)
         if (weights == 3) 
-          tloss <- sum(((emp_cov1[,6] - theo)/(max(emp_cov1[, 3+j]) - theo))^2)
+          tloss <- sum(((emp_cov1[,6] - theo)/(1.001 - theo))^2)
         
         loss <- loss + tloss
         
@@ -614,7 +760,7 @@ wls <- function(theta, emp_cov1, weights, nug_eff, step, est_param = NULL, meter
       
       alpha <-  matrix(est_param[7:10], ncol=2, byrow=T)
       
-      w <- matrix(theta[1:4], ncol=2, byrow=T)
+      w <- matrix(theta[1:4], ncol=2, byrow=T)/1000
       
       if(!rand.vel == T){
         theo_list <- list()
@@ -631,10 +777,18 @@ wls <- function(theta, emp_cov1, weights, nug_eff, step, est_param = NULL, meter
         }
       }else{
         sigma <- list()
-        sigma[[1]] <- matrix(c(theta[5:6], theta[6:7]), ncol=2, byrow=T)
-        sigma[[2]] <- matrix(c(theta[8:9], theta[9:10]), ncol=2, byrow=T)
+        sigma[[1]] <- matrix(c(theta[5:6], theta[6:7]), ncol=2, byrow=T)/1000
+        sigma[[2]] <- matrix(c(theta[8:9], theta[9:10]), ncol=2, byrow=T)/1000
         
-        if(theta[5] < 0 | theta[7] < 0 | min(eigen(sigma[[1]])$values) <= 0 | theta[8] < 0 | theta[10] < 0 | min(eigen(sigma[[2]])$values) <= 0 ){
+        sim.cov <- simulate_model(mod = 'lmc', randvel = T, theta = est_param[1:10], wind = theta[1:4], wind_var = list(matrix(c(theta[5:6], theta[6:7]), ncol=2), matrix(c(theta[8:9], theta[9:10]), ncol=2)), maxtimelag = max_time_lag, p = q, locations = loc, meters = T, nugeff = nug_eff)
+        
+        full_cov1 <- sim.cov
+        given_cov1 <- full_cov1[-to_remove, -to_remove]
+        unknown_cov1 <- full_cov1[to_remove, -to_remove]
+        var_pred1 <- tryCatch(diag(full_cov1[to_remove, to_remove] - unknown_cov1 %*% solve(given_cov1) %*% t(full_cov1[to_remove, -to_remove])), error = function(e) NULL)
+        
+        if(theta[5] < 0 | theta[7] < 0 | min(eigen(sigma[[1]])$values) <= 0 | theta[8] < 0 | theta[10] < 0 | min(eigen(sigma[[2]])$values) <= 0 |
+           length(var_pred1) == 0){
           return(Inf)
         }else{
           theo_list <- list()
@@ -642,9 +796,10 @@ wls <- function(theta, emp_cov1, weights, nug_eff, step, est_param = NULL, meter
           for(i in 1:2){
             
             if(meters == T){
-              h <- sqrt(diag((emp_cov1[,1:2] - matrix(c(emp_cov1[, 3]*w[i,1], emp_cov1[, 3]*w[i,2]), ncol=2))%*%solve(diag(2) + sigma[[i]])%*%t(emp_cov1[,1:2] - matrix(c(emp_cov1[, 3]*w[i,1], emp_cov1[, 3]*w[i,2]), ncol=2))))/1000
+              hh1 <- hh/1000
+              h <- sqrt(diag((hh1 - matrix(c(emp_cov1[, 3]*w[i,1], emp_cov1[, 3]*w[i,2]), ncol=2))%*%solve(diag(2) + sigma[[i]])%*%t(hh1 - matrix(c(emp_cov1[, 3]*w[i,1], emp_cov1[, 3]*w[i,2]), ncol=2))))
             }else{
-              h <- sqrt(diag((emp_cov1[,1:2] - matrix(c(emp_cov1[, 3]*w[i,1], emp_cov1[, 3]*w[i,2]), ncol=2))%*%solve(diag(2) + sigma[[i]])%*%t(emp_cov1[,1:2] - matrix(c(emp_cov1[, 3]*w[i,1], emp_cov1[, 3]*w[i,2]), ncol=2))))
+              h <- sqrt(diag((hh1 - matrix(c(emp_cov1[, 3]*w[i,1], emp_cov1[, 3]*w[i,2]), ncol=2))%*%solve(diag(2) + sigma[[i]])%*%t(hh1 - matrix(c(emp_cov1[, 3]*w[i,1], emp_cov1[, 3]*w[i,2]), ncol=2))))
             }
             theo_list_temp <- ifelse(h != 0, var[i]*(h/beta[i])^nu[i]*besselK(h/beta[i], nu[i])/(2^(nu[i]-1)*gamma(nu[i])), var[i] + nug[i])
             theo_list[[i]] <- theo_list_temp/sqrt(det(diag(2) + sigma[[i]]))
@@ -670,7 +825,7 @@ wls <- function(theta, emp_cov1, weights, nug_eff, step, est_param = NULL, meter
       if (weights == 2) 
         tloss <- sum(np* (emp_cov1[, 6] - theo)^2)
       if (weights == 3) 
-        tloss <- sum(((emp_cov1[, 6] - theo)/(max(emp_cov1[, 3+j]) - theo))^2)
+        tloss <- sum(((emp_cov1[, 6] - theo)/(1.001 - theo))^2)
       
       loss <- loss+tloss
       
@@ -706,6 +861,7 @@ wls <- function(theta, emp_cov1, weights, nug_eff, step, est_param = NULL, meter
       nu1 <- nu[1]
       nu2 <- nu[2]
       nu3 <- (nu1 + nu2)/2
+      
       
       if( theta[1] < 0.0001 | theta[2] < 0.0001 | theta[3] < 0.0001 | theta[4] < 0.0001 | theta[5] < 0.0001 |theta[6]< 0.001 | theta[6] > 1 | theta[7] < 100 |
           theta[8] < 0.0001 | theta[9] < 0.0001 | theta[10] < 5 ){
@@ -805,11 +961,13 @@ wls <- function(theta, emp_cov1, weights, nug_eff, step, est_param = NULL, meter
       h2 <- sqrt((hh[,1]-w[1])^2+(hh[,2]-w[2])^2)/1000
       
       if(meters == T){
-        h <- sqrt((hh[,1] - emp_cov1[,3]*w[1])^2 + (hh[,2] - emp_cov1[,3]*w[2])^2)/1000
-        h2 <- sqrt((hh2[,1] - emp_cov1[,3]*w[1])^2 + (hh2[,2] - emp_cov1[,3]*w[2])^2)/1000
+        h <- sqrt(hh[,1]^2 + hh[,2]^2)/1000
+        h2 <- sqrt((hh[,1] - emp_cov1[,3]*w[1])^2 + (hh2[,2] - emp_cov1[,3]*w[2])^2)/1000
+        h <- h/(alpha+1)^(b/2)
       }else{
-        h <- sqrt((hh[,1] - emp_cov1[,3]*w[1])^2 + (hh[,2] - emp_cov1[,3]*w[2])^2)
+        h <- sqrt(hh[,1]^2 + hh[,2]^2)
         h2 <- sqrt((hh2[,1] - emp_cov1[,3]*w[1])^2 + (hh2[,2] - emp_cov1[,3]*w[2])^2)
+        h <- h/(alpha+1)^(b/2)
       }
       
       mu1 <- mu[1]
@@ -824,8 +982,7 @@ wls <- function(theta, emp_cov1, weights, nug_eff, step, est_param = NULL, meter
         return(Inf)
       }else{
         for(i in 1:2){
-          h_star <- h
-          theo.temp <- ifelse(h != 0, var[i]*(h_star/beta)^nu[i] * besselK(h_star/beta,nu[i])/(2^(nu[i]-1)*gamma(nu[i]))/(alpha+1),(var[i]+nug[i])/(alpha+1))
+          theo.temp <- ifelse(h != 0, var[i]*(h/beta)^nu[i] * besselK(h/beta, nu[i])/(2^(nu[i] - 1)*gamma(nu[i]))/(alpha + 1), (var[i] + nug[i])/(alpha + 1))
           lagrangian <- pmax((1 - h2/scale), 0)^(nu.L + mu[i])
           
           theo <- (1 - lambda)*theo.temp + lambda*lagrangian
@@ -839,13 +996,10 @@ wls <- function(theta, emp_cov1, weights, nug_eff, step, est_param = NULL, meter
           loss <- loss+tloss
         }
         for(i in 3:3){
-          
-          h_star <- h
-          
-          theo.temp <- ifelse(h != 0,(h_star/beta)^nu3 * besselK(h_star/beta, nu3)/(2^(nu3 - 1)*gamma(nu3))*sqrt(var[1] * var[2])*rho/((alpha + 1)), sqrt(var[1] * var[2])*rho/((alpha + 1)))
+          theo.temp <- ifelse(h != 0, (h/beta)^nu3 * besselK(h/beta, nu3)/(2^(nu3 - 1)*gamma(nu3))*sqrt(var[1] * var[2])*rho/((alpha + 1)), sqrt(var[1] * var[2])*rho/((alpha + 1)))
           
           beta2.3 <- (gamma(1 + mu3)/gamma(1 + nu.L + mu3))*sqrt((gamma(1 + nu.L + mu1)*gamma(1 + nu.L + mu2))/(gamma(1 + mu1)*gamma(1 + mu2)))
-          lagrangian <- beta2.3*pmax((1 - h2/scale),0)^(nu.L+mu3)
+          lagrangian <- beta2.3*pmax((1 - h2/scale), 0)^(nu.L+mu3)
           theo <- (1 - lambda)*theo.temp + lambda*lagrangian
           
           if (weights == 1) 
